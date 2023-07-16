@@ -1,0 +1,32 @@
+{
+  "settings": {
+    "index": {
+      "number_of_shards": 1,
+      "number_of_replicas": 0
+    }
+  },
+  "mappings": {
+    "properties": {
+      "is_subscribed": {
+        "type": "boolean"
+      },
+      "keywords": {
+        "type": "nested",
+        "properties": {
+          "theme": {
+            "type": "keyword"
+          },
+          "keywords": {
+            "type": "keyword"
+          },
+          "last_crawl_timestamp": {
+            "type": "date"
+          }
+        }
+      }
+    }
+  },
+  "aliases": {
+    "subscriber": {}
+  }
+}
