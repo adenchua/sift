@@ -7,16 +7,13 @@ from opensearch_helper.opensearch_client import opensearch_client
 
 async def download_messages(channel_id: str, offset_id: int, themes: List[str]):
     max_message_id = -1
-
     messages = await telegram_client.get_channel_messages(channel_id, offset_id)
 
     for message in messages:
         # unique to a particular channel. Need to combine with channel_id
         message_id = int(message.id)
-
         # the latest message id will be the largest
         max_message_id = max(message_id, max_message_id)
-
         document = {
             "text": message.text,
             "themes": themes,
@@ -24,7 +21,6 @@ async def download_messages(channel_id: str, offset_id: int, themes: List[str]):
             "channel_id": channel_id,
         }
         document_id = ("-").join([channel_id, str(message_id)])
-
         opensearch_client.ingest_message(document, document_id)
 
     # for future crawl to use this offset_id for messages after this
@@ -42,10 +38,11 @@ async def main():
         channel_themes = channel["themes"]
         await download_messages(
             channel_id,
-            offset_id=offset_id if offset_id is not None else -1,
+            offset_id=-1 if offset_id is None else offset_id,
             themes=channel_themes,
         )
 
 
 if __name__ == "__main__":
+    print("starting crawler service...")
     asyncio.get_event_loop().run_until_complete(main())
