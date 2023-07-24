@@ -1,8 +1,12 @@
 # vscode
 .vscode
 
+# setup
+demo_setup.json
+
 # telegram api sessions
 *.session
+*.session-journal
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

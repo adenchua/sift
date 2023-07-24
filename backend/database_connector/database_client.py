@@ -1,7 +1,8 @@
-from opensearchpy import OpenSearch
-import dotenv
 import os
 from typing import List
+
+from opensearchpy import OpenSearch
+import dotenv
 
 from utils import date_helper
 
@@ -12,7 +13,7 @@ env_username = os.getenv("ENV_OS_USERNAME") or ""
 env_password = os.getenv("ENV_OS_PASSWORD") or ""
 
 
-class OpenSearchClient:
+class DatabaseClient:
     __MAX_QUERY_SIZE = 10_000  # elasticsearch max query size
 
     def __init__(self):
@@ -119,4 +120,4 @@ class OpenSearchClient:
         return self.__clean_hits_response(response)
 
 
-opensearch_client = OpenSearchClient()
+database_client = DatabaseClient()

@@ -1,7 +1,7 @@
 version: '3'
 services:
   opensearch-node:
-    image: opensearchproject/opensearch:latest
+    image: opensearchproject/opensearch:2.8.0
     container_name: opensearch-node
     environment:
       - cluster.name=opensearch-cluster
