@@ -3,12 +3,24 @@
     "index": {
       "number_of_shards": 1,
       "number_of_replicas": 0
+    },
+    "analysis": {
+      "analyzer": {
+        "standard_analyzer": {
+          "tokenizer": "standard",
+          "filter": [
+            "apostrophe","lowercase"
+          ]
+        }
+      }
     }
   },
   "mappings": {
     "properties": {
       "text": {
-        "type": "text"
+        "type": "text",
+        "analyzer": "standard_analyzer",
+        "search_analyzer": "standard_analyzer"
       },
       "themes": {
         "type": "keyword"
