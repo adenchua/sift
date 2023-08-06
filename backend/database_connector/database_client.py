@@ -4,7 +4,8 @@ from typing import List
 from opensearchpy import OpenSearch
 import dotenv
 
-from utils import date_helper
+from services.logging_service import LoggingService
+
 
 dotenv.load_dotenv()
 env_host = os.getenv("ENV_OS_HOST") or ""
@@ -14,7 +15,7 @@ env_password = os.getenv("ENV_OS_PASSWORD") or ""
 
 
 class DatabaseClient:
-    __MAX_QUERY_SIZE = 10_000  # elasticsearch max query size
+    __MAX_QUERY_SIZE = 10_000  # OpenSearch max query size
 
     def __init__(self):
         self.client = OpenSearch(
@@ -26,6 +27,8 @@ class DatabaseClient:
             ssl_assert_hostname=False,
             ssl_show_warn=False,
         )
+
+        self.logging_service = LoggingService()
 
     def __clean_hits_response(self, opensearch_response):
         """
@@ -42,7 +45,7 @@ class DatabaseClient:
 
         return result
 
-    def __build_query_string(self, query_string_list: List[str]):
+    def build_query_string(self, query_string_list: List[str]):
         temp = []
         for query_string in query_string_list:
             if query_string.find(" ") != -1:
@@ -53,71 +56,32 @@ class DatabaseClient:
 
         return (" OR ").join(temp)
 
-    def ingest_message(self, document, document_id):
+    def read(self, index_name: str, query):
+        response = self.client.search(
+            index=index_name,
+            body={"size": self.__MAX_QUERY_SIZE, "query": query},
+        )
+
+        self.logging_service.log_info(message=f"READ | index <{index_name}>")
+
+        return self.__clean_hits_response(response)
+
+    def update(self, index_name: str, document_id: str, update_body):
+        self.client.update(index=index_name, id=document_id, body=update_body)
+
+        self.logging_service.log_info(
+            message=f"UPDATE | index <{index_name}>, document id <{document_id}>"
+        )
+
+        # TODO: add in response message
+
+    def create(self, index_name, document, document_id):
         response = self.client.index(
-            index="message", body=document, id=document_id, refresh=True
+            index=index_name, body=document, id=document_id, refresh=True
         )
-        print(response)
 
-    def get_channels(self):
-        query = {"size": self.__MAX_QUERY_SIZE, "query": {"match_all": {}}}
-        response = self.client.search(index="channel", body=query)
-        return self.__clean_hits_response(response)
-
-    def get_users(self):
-        query = {
-            "size": self.__MAX_QUERY_SIZE,
-            "query": {"term": {"is_subscribed": True}},
-        }
-        response = self.client.search(index="subscriber", body=query)
-        return self.__clean_hits_response(response)
-
-    def update_channel(self, channel_id, updated_fields):
-        response = self.client.update(
-            index="channel", id=channel_id, body={"doc": updated_fields}
+        self.logging_service.log_info(
+            message=f"CREATE | index <{index_name}>, document id <{document_id}>"
         )
-        print(response)
 
-    def update_subscriber_theme_timestamp(self, subscriber_id: str, theme: str):
-        response = self.client.update(
-            index="subscriber",
-            id=subscriber_id,
-            body={
-                "script": {
-                    "lang": "painless",
-                    "source": """for(int i=0;i<ctx._source.keywords.length;i++){
-                if(ctx._source.keywords[i].theme == params.theme){ctx._source.keywords[i].last_crawl_timestamp = params.new_value;}
-                }""",
-                    "params": {
-                        "theme": theme,
-                        "new_value": date_helper.get_current_iso_datetime(),
-                    },
-                },
-            },
-        )
-        print(response)
-
-    def get_messages(self, query_string_list: List[str], theme: str, iso_date=None):
-        # if timestamp is not provided, send messages after today 0000hrs
-        gte_datetime = (
-            date_helper.get_today_iso_date() if iso_date is None else iso_date
-        )
-        query_string = self.__build_query_string(query_string_list)
-        query = {
-            "size": self.__MAX_QUERY_SIZE,
-            "query": {
-                "bool": {
-                    "must": [
-                        {"query_string": {"query": query_string}},
-                        {"term": {"themes": {"value": theme}}},
-                    ],
-                    "filter": [{"range": {"timestamp": {"gte": gte_datetime}}}],
-                }
-            },
-        }
-
-        response = self.client.search(index="message", body=query)
-        return self.__clean_hits_response(response)
-
-
-database_client = DatabaseClient()
+        return response

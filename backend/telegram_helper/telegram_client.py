@@ -18,7 +18,7 @@ class TelegramClient:
         )
         self.client.start()
 
-    async def get_channel_messages(self, channel_id: str, offset_id: int = -1):
+    async def get_telegram_channel_messages(self, channel_id: str, offset_id: int = -1):
         channel = await self.client.get_entity(channel_id)
 
         if offset_id == -1:
