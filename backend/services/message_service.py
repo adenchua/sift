@@ -18,9 +18,7 @@ class MessageService:
 
     def get_messages(self, keywords_list: List[str], theme: str, iso_date=None):
         # if timestamp is not provided, send messages after today 0000hrs
-        gte_datetime = (
-            date_helper.get_today_iso_date() if iso_date is None else iso_date
-        )
+        gt_datetime = date_helper.get_today_iso_date() if iso_date is None else iso_date
         query_string = self.database_client.build_query_string(keywords_list)
         query = {
             "bool": {
@@ -28,7 +26,7 @@ class MessageService:
                     {"query_string": {"query": query_string}},
                     {"term": {"themes": {"value": theme}}},
                 ],
-                "filter": [{"range": {"timestamp": {"gte": gte_datetime}}}],
+                "filter": [{"range": {"timestamp": {"gt": gt_datetime}}}],
             }
         }
 

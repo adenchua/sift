@@ -10,7 +10,7 @@
       "is_subscribed": {
         "type": "boolean"
       },
-      "keywords": {
+      "subscribed_themes": {
         "type": "nested",
         "properties": {
           "theme": {

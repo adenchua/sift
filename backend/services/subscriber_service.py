@@ -1,5 +1,4 @@
 from database_connector.database_client import DatabaseClient
-from utils import date_helper
 
 
 class SubscriberService:
@@ -18,19 +17,21 @@ class SubscriberService:
 
         return result
 
-    def update_subscriber_theme_timestamp(self, subscriber_id: str, theme: str):
+    def update_subscriber_theme_timestamp(
+        self, subscriber_id: str, theme: str, iso_timestamp: str
+    ):
         self.database_client.update(
             index_name=self.__INDEX_NAME,
             document_id=subscriber_id,
             update_body={
                 "script": {
                     "lang": "painless",
-                    "source": """for(int i=0;i<ctx._source.keywords.length;i++){
-                if(ctx._source.keywords[i].theme == params.theme){ctx._source.keywords[i].last_crawl_timestamp = params.new_value;}
+                    "source": """for(int i=0;i<ctx._source.subscribed_themes.length;i++){
+                if(ctx._source.subscribed_themes[i].theme == params.theme){ctx._source.subscribed_themes[i].last_crawl_timestamp = params.new_value;}
                 }""",
                     "params": {
                         "theme": theme,
-                        "new_value": date_helper.get_current_iso_datetime(),
+                        "new_value": iso_timestamp,
                     },
                 },
             },
