@@ -1,5 +1,5 @@
 import os
-from typing import List
+from typing import List, Optional
 
 from opensearchpy import OpenSearch
 import dotenv
@@ -30,6 +30,9 @@ class DatabaseClient:
 
         self.logging_service = LoggingService()
 
+    def document_exist(self, index_name: str, document_id: str):
+        return self.client.exists(index=index_name, id=document_id)
+
     def __clean_hits_response(self, opensearch_response):
         """
         The default opensearch response for search query wraps the result with hits.hits
@@ -56,7 +59,7 @@ class DatabaseClient:
 
         return (" OR ").join(temp)
 
-    def read(self, index_name: str, query):
+    def read(self, index_name: str, query: dict):
         response = self.client.search(
             index=index_name,
             body={"size": self.__MAX_QUERY_SIZE, "query": query},
@@ -66,22 +69,34 @@ class DatabaseClient:
 
         return self.__clean_hits_response(response)
 
-    def update(self, index_name: str, document_id: str, update_body):
-        self.client.update(index=index_name, id=document_id, body=update_body)
+    def update(self, index_name: str, document_id: str, update_body: dict):
+        result = self.client.update(index=index_name, id=document_id, body=update_body)
 
         self.logging_service.log_info(
             message=f"UPDATE | index <{index_name}>, document id <{document_id}>"
         )
 
-        # TODO: add in response message
+        return result
 
-    def create(self, index_name, document, document_id):
-        response = self.client.index(
-            index=index_name, body=document, id=document_id, refresh=True
+    def create(
+        self, index_name: str, document: dict, document_id: Optional[str] = None
+    ):
+        if document_id is not None:
+            document_exists = self.document_exist(
+                index_name=index_name, document_id=document_id
+            )
+            if document_exists:
+                return {
+                    "message": f"resource {document_id} already exists in {index_name} index"
+                }
+
+        result = self.client.index(
+            index=index_name, body=document, refresh=True, id=document_id
         )
+        new_document_id = result["_id"]
 
         self.logging_service.log_info(
-            message=f"CREATE | index <{index_name}>, document id <{document_id}>"
+            message=f"CREATE | index <{index_name}>, document id <{new_document_id}>"
         )
 
-        return response
+        return result
