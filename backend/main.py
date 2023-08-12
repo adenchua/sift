@@ -1,7 +1,7 @@
 import argparse
 import asyncio
 
-from telegram_helper.telegram_client import telegram_client
+from services.telegram_client import telegram_client
 from services.subscriber_service import SubscriberService
 from services.channel_service import ChannelService
 from services.message_service import MessageService

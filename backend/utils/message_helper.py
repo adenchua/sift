@@ -1,6 +1,6 @@
 from typing import List
 
-from telegram_helper.telegram_client import telegram_client
+from services.telegram_client import telegram_client
 from services.channel_service import ChannelService
 from services.message_service import MessageService, Message
 
