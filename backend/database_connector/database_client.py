@@ -5,6 +5,7 @@ from opensearchpy import OpenSearch
 import dotenv
 
 from services.logging_service import LoggingService
+from classes.database_error import DatabaseError
 
 
 dotenv.load_dotenv()
@@ -31,6 +32,17 @@ class DatabaseClient:
         self.logging_service = LoggingService()
 
     def document_exist(self, index_name: str, document_id: str):
+        """
+        checks if a document with the document_id exist in the index.
+
+        Parameters:
+        index_name - name of the index in the database to check the document
+
+        document_id - id of the document in the database
+
+        Returns:
+        True if the document with the document_id exist, false otherwise
+        """
         return self.client.exists(index=index_name, id=document_id)
 
     def __clean_hits_response(self, opensearch_response):
@@ -60,6 +72,17 @@ class DatabaseClient:
         return (" OR ").join(temp)
 
     def read(self, index_name: str, query: dict):
+        """
+        Performs a search in the index based on the search query
+
+        Parameters:
+        index_name - index of the database to perform the search on
+
+        query - internal database key value pairs to perform the search
+
+        Returns:
+        list of matching documents
+        """
         response = self.client.search(
             index=index_name,
             body={"size": self.__MAX_QUERY_SIZE, "query": query},
@@ -69,34 +92,115 @@ class DatabaseClient:
 
         return self.__clean_hits_response(response)
 
-    def update(self, index_name: str, document_id: str, update_body: dict):
-        result = self.client.update(index=index_name, id=document_id, body=update_body)
+    def update(
+        self,
+        index_name: str,
+        document_id: str,
+        partial_doc: Optional[dict] = None,
+        script_doc: Optional[dict] = None,
+    ) -> None:
+        """Updates a existing document in the database
 
-        self.logging_service.log_info(
-            message=f"UPDATE | index <{index_name}>, document id <{document_id}>"
+        Parameters:
+        index_name - index of the document to update
+
+        document_id - id of the document to update
+
+        partial_doc (optional) - dict of key/values in the document to update
+
+        script_doc (optional) - uses the database internal script to update document
+
+        Returns:
+        True if the update operation is successful, False if the document does not exist
+        """
+        update_log_message = (
+            f"UPDATE | index <{index_name}>, document id <{document_id}>"
         )
 
-        return result
+        document_exists = self.document_exist(
+            index_name=index_name, document_id=document_id
+        )
+
+        if not document_exists:
+            return False  # document does not exist, unable to perform update operation
+
+        try:
+            if partial_doc is not None:
+                self.client.update(
+                    index=index_name, id=document_id, body={"doc": partial_doc}
+                )
+
+                self.logging_service.log_info(message=update_log_message)
+
+                return
+
+            if script_doc is not None:
+                self.client.update(
+                    index=index_name, id=document_id, body={"script": script_doc}
+                )
+
+                self.logging_service.log_info(message=update_log_message)
+
+                return
+        except Exception as error:
+            self.logging_service.log_error(error["message"])
+            raise DatabaseError("Failed to update document in index")
 
     def create(
         self, index_name: str, document: dict, document_id: Optional[str] = None
     ):
-        if document_id is not None:
+        """Creates a new document in an index in the database
+
+
+        Parameters:
+        index_name - index of the database to add the document
+
+        document - document to add in the index
+
+        document_id (optional) - creates a document with this document_id. If a document already exist
+        with this document_id, the document will not be created
+
+        Raises:
+        DatabaseError - when index name is invalid, document is malformed or an internal database error
+
+
+        Returns:
+        id of the newly created document, or None if the document is not created
+        """
+        try:
+            if document_id is None:
+                response = self.client.index(
+                    index=index_name,
+                    body=document,
+                    refresh=True,  # force refresh of database shards for retrieval
+                )
+
+                new_document_id = response["_id"]
+
+                self.logging_service.log_info(
+                    message=f"CREATE | index <{index_name}>, document id <{new_document_id}>"
+                )
+
+                return new_document_id
+
+            # document_id is given, need to check if document with the document_id already exists
+            # if it exists, do not create the document
             document_exists = self.document_exist(
                 index_name=index_name, document_id=document_id
             )
             if document_exists:
-                return {
-                    "message": f"resource {document_id} already exists in {index_name} index"
-                }
+                return None
 
-        result = self.client.index(
-            index=index_name, body=document, refresh=True, id=document_id
-        )
-        new_document_id = result["_id"]
+            self.client.create(
+                index=index_name, body=document, refresh=True, id=document_id
+            )
 
-        self.logging_service.log_info(
-            message=f"CREATE | index <{index_name}>, document id <{new_document_id}>"
-        )
+            self.logging_service.log_info(
+                message=f"CREATE | index <{index_name}>, document id <{document_id}>"
+            )
 
-        return result
+            return document_id
+
+        except Exception as error:
+            self.logging_service.log_error(error["message"])
+            raise DatabaseError("Failed to create document in index")

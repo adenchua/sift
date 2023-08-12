@@ -23,18 +23,14 @@ class SubscriberService:
         self.database_client.update(
             index_name=self.__INDEX_NAME,
             document_id=subscriber_id,
-            update_body={
-                "script": {
-                    "lang": "painless",
-                    "source": """for(int i=0;i<ctx._source.subscribed_themes.length;i++){
+            script_doc={
+                "lang": "painless",
+                "source": """for(int i=0;i<ctx._source.subscribed_themes.length;i++){
                 if(ctx._source.subscribed_themes[i].theme == params.theme){ctx._source.subscribed_themes[i].last_crawl_timestamp = params.new_value;}
                 }""",
-                    "params": {
-                        "theme": theme,
-                        "new_value": iso_timestamp,
-                    },
+                "params": {
+                    "theme": theme,
+                    "new_value": iso_timestamp,
                 },
             },
         )
-
-        # TODO: add in response message

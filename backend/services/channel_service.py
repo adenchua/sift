@@ -40,7 +40,7 @@ class ChannelService:
         result = self.database_client.update(
             index_name="channel",
             document_id=channel_id,
-            update_body={"doc": {"offset_id": new_offset_id}},
+            partial_doc={"offset_id": new_offset_id},
         )
 
         return result
