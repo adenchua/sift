@@ -66,7 +66,7 @@ class ChannelService:
 
         return result
 
-    def set_channel_activeness(self, channel_id: str, is_active: bool) -> bool:
+    def toggle_channel_activeness(self, channel_id: str, is_active: bool) -> bool:
         """
         Sets a channel is_active flag to the given is_active flag
 
@@ -75,16 +75,27 @@ class ChannelService:
         channel_id - id of channel to toggle is_active flag
 
         is_active - flag to be used to set the channel is_active
-
-
-        Returns:
-        True if the operation is successful
         """
         try:
-            result = self.database_client.update(
+            self.database_client.update(
                 index_name=self.__INDEX_NAME, document_id=channel_id, partial_doc={"is_active": is_active}
             )
 
-            return result
+        except Exception as error:
+            raise error
+
+    def update_channel_themes(self, channel_id: str, themes: List[str]):
+        """
+        Updates a channel's themes list
+
+        Parameters:
+        channel_id - id of the channel to update
+        themes - list of themes to set this channel to. Messages crawled from this channel will inherit the themes
+        """
+        try:
+            self.database_client.update(
+                index_name=self.__INDEX_NAME, document_id=channel_id, partial_doc={"themes": themes}
+            )
+
         except Exception as error:
             raise error
