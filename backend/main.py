@@ -3,7 +3,7 @@ import asyncio
 
 from telegram_helper.telegram_client import telegram_client
 from services.subscriber_service import SubscriberService
-from services.channel_service import ChannelService, Channel
+from services.channel_service import ChannelService
 from services.message_service import MessageService
 from utils.message_helper import extract_and_ingest_messages
 from utils.date_helper import get_latest_iso_datetime
@@ -28,16 +28,12 @@ async def notify_subscribers():
             timestamp = subscribed_theme["last_crawl_timestamp"]
             message_iso_dates = []  # datetime for comparison later
 
-            messages = message_service.get_messages(
-                keywords_list=keywords, theme=theme, iso_date=timestamp
-            )
+            messages = message_service.get_messages(keywords_list=keywords, theme=theme, iso_date=timestamp)
 
             for message in messages:
                 message_iso_dates.append(message["timestamp"])
 
-                await telegram_client.send_message(
-                    message=message["text"], target_id=user_id
-                )
+                await telegram_client.send_message(message=message["text"], target_id=user_id)
 
             latest_message_iso_datetime = get_latest_iso_datetime(message_iso_dates)
 

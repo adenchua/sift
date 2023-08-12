@@ -6,6 +6,7 @@
     }
   },
   "mappings": {
+    "dynamic": "strict",
     "properties": {
       "name": {
         "type": "text"

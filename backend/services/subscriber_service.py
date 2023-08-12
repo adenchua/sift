@@ -1,4 +1,19 @@
+from pydantic import BaseModel
+from typing import Optional, List
+
 from database_connector.database_client import DatabaseClient
+
+
+class SubscribedTheme(BaseModel):
+    theme: str
+    keywords: List[str]
+    last_crawl_timestamp: Optional[str] = None
+
+
+class Subscriber(BaseModel):
+    telegram_id: str
+    is_subscribed: Optional[bool] = True
+    subscribed_themes: list[SubscribedTheme] = []
 
 
 class SubscriberService:
@@ -17,9 +32,7 @@ class SubscriberService:
 
         return result
 
-    def update_subscriber_theme_timestamp(
-        self, subscriber_id: str, theme: str, iso_timestamp: str
-    ):
+    def update_subscriber_theme_timestamp(self, subscriber_id: str, theme: str, iso_timestamp: str):
         self.database_client.update(
             index_name=self.__INDEX_NAME,
             document_id=subscriber_id,
@@ -33,4 +46,16 @@ class SubscriberService:
                     "new_value": iso_timestamp,
                 },
             },
+        )
+
+    def add_subscriber(self, subscriber: Subscriber):
+        """
+        adds a subscriber to the database
+        """
+        subscribed_themes = [subscribed_theme.model_dump() for subscribed_theme in subscriber.subscribed_themes]
+
+        self.database_client.create(
+            index_name=self.__INDEX_NAME,
+            document={"is_subscribed": subscriber.is_subscribed, "subscribed_themes": subscribed_themes},
+            document_id=subscriber.telegram_id,
         )

@@ -6,6 +6,7 @@
     }
   },
   "mappings": {
+    "dynamic": "strict",
     "properties": {
       "is_subscribed": {
         "type": "boolean"
