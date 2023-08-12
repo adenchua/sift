@@ -40,10 +40,17 @@ class DatabaseClient:
 
         document_id - id of the document in the database
 
+        Raises:
+        DatabaseError - when index name is invalid, document is malformed or an internal database error
+
         Returns:
         True if the document with the document_id exist, false otherwise
         """
-        return self.client.exists(index=index_name, id=document_id)
+        try:
+            return self.client.exists(index=index_name, id=document_id)
+        except Exception as error:
+            self.logging_service.log_error(error_message=error["message"])
+            raise DatabaseError("something went wrong with the database")
 
     def __clean_hits_response(self, opensearch_response):
         """
@@ -80,17 +87,24 @@ class DatabaseClient:
 
         query - internal database key value pairs to perform the search
 
+        Raises:
+        DatabaseError - when index name is invalid, document is malformed or an internal database error
+
         Returns:
         list of matching documents
         """
-        response = self.client.search(
-            index=index_name,
-            body={"size": self.__MAX_QUERY_SIZE, "query": query},
-        )
+        try:
+            response = self.client.search(
+                index=index_name,
+                body={"size": self.__MAX_QUERY_SIZE, "query": query},
+            )
 
-        self.logging_service.log_info(message=f"READ | index <{index_name}>")
+            self.logging_service.log_info(message=f"READ | index <{index_name}>")
 
-        return self.__clean_hits_response(response)
+            return self.__clean_hits_response(response)
+        except Exception as error:
+            self.logging_service.log_error(error_message=error["message"])
+            raise DatabaseError("Failed to read documents in index")
 
     def update(
         self,
@@ -109,6 +123,9 @@ class DatabaseClient:
         partial_doc (optional) - dict of key/values in the document to update
 
         script_doc (optional) - uses the database internal script to update document
+
+        Raises:
+        DatabaseError - when index name is invalid, document is malformed or an internal database error
 
         Returns:
         True if the update operation is successful, False if the document does not exist
@@ -143,7 +160,7 @@ class DatabaseClient:
 
                 return
         except Exception as error:
-            self.logging_service.log_error(error["message"])
+            self.logging_service.log_error(error_message=error["message"])
             raise DatabaseError("Failed to update document in index")
 
     def create(
@@ -202,5 +219,5 @@ class DatabaseClient:
             return document_id
 
         except Exception as error:
-            self.logging_service.log_error(error["message"])
+            self.logging_service.log_error(error_message=error["message"])
             raise DatabaseError("Failed to create document in index")
