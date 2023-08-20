@@ -5,7 +5,7 @@ from opensearchpy import OpenSearch
 import dotenv
 
 from services.logging_service import LoggingService
-from classes.database_error import DatabaseError
+from classes.database_exception import DatabaseException
 
 
 dotenv.load_dotenv()
@@ -41,7 +41,7 @@ class DatabaseClient:
         document_id - id of the document in the database
 
         Raises:
-        DatabaseError - when index name is invalid, document is malformed or an internal database error
+        DatabaseException - when index name is invalid, document is malformed or an internal database error
 
         Returns:
         True if the document with the document_id exist, false otherwise
@@ -50,7 +50,7 @@ class DatabaseClient:
             return self.client.exists(index=index_name, id=document_id)
         except Exception as error:
             self.logging_service.log_error(error_message=error)
-            raise DatabaseError("something went wrong with the database")
+            raise DatabaseException("something went wrong with the database")
 
     def __clean_hits_response(self, opensearch_response):
         """
@@ -88,7 +88,7 @@ class DatabaseClient:
         query - internal database key value pairs to perform the search
 
         Raises:
-        DatabaseError - when index name is invalid, document is malformed or an internal database error
+        DatabaseException - when index name is invalid, document is malformed or an internal database error
 
         Returns:
         list of matching documents
@@ -104,7 +104,7 @@ class DatabaseClient:
             return self.__clean_hits_response(response)
         except Exception as error:
             self.logging_service.log_error(error_message=error)
-            raise DatabaseError("Failed to read documents in index")
+            raise DatabaseException("Failed to read documents in index")
 
     def update(
         self,
@@ -125,7 +125,7 @@ class DatabaseClient:
         script_doc (optional) - uses the database internal script to update document
 
         Raises:
-        DatabaseError - when index name is invalid, document is malformed or an internal database error
+        DatabaseException - when index name is invalid, document is malformed or an internal database error
 
         Returns:
         True if the update operation is successful, False if the document does not exist
@@ -153,7 +153,7 @@ class DatabaseClient:
                 return
         except Exception as error:
             self.logging_service.log_error(error_message=error)
-            raise DatabaseError("Failed to update document in index")
+            raise DatabaseException("Failed to update document in index")
 
     def create(self, index_name: str, document: dict, document_id: Optional[str] = None):
         """Creates a new document in an index in the database
@@ -168,7 +168,7 @@ class DatabaseClient:
         with this document_id, the document will not be created
 
         Raises:
-        DatabaseError - when index name is invalid, document is malformed or an internal database error
+        DatabaseException - when index name is invalid, document is malformed or an internal database error
 
 
         Returns:
@@ -202,4 +202,4 @@ class DatabaseClient:
 
         except Exception as error:
             self.logging_service.log_error(error_message=error)
-            raise DatabaseError("Failed to create document in index")
+            raise DatabaseException("Failed to create document in index")
