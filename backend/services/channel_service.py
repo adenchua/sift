@@ -18,6 +18,9 @@ class ChannelService:
     def __init__(self):
         self.database_client = DatabaseClient()
 
+    def check_channel_exists(self, channel_id: str):
+        return self.database_client.document_exist(index_name=self.__INDEX_NAME, document_id=channel_id)
+
     def get_channels(self):
         """
         Retrieves all channels in the database, including inactive channels
@@ -27,6 +30,16 @@ class ChannelService:
             return result
         except Exception as error:
             raise (error)
+
+    def get_channel(self, channel_id: str) -> Channel:
+        try:
+            response = self.database_client.read(index_name=self.__INDEX_NAME, query={"match": {"_id": channel_id}})
+            if len(response) == 1:
+                return response[0]
+
+            return None
+        except Exception as error:
+            raise error
 
     def get_active_channels(self):
         """
@@ -57,8 +70,18 @@ class ChannelService:
         """
         Adds a new channel to the database. A channel's is_active flag is set to True by default
         unless specified.
+
+        If a channel exists already, add the theme to existing channel instead
         """
         try:
+            existing_channel = self.get_channel(channel_id=channel.channel_id)
+            # channel exists, add theme to channel
+            if existing_channel is not None:
+                # ensure no duplicates of themes
+                combined_themes = list(set().union([*existing_channel["themes"], *channel.themes]))
+                self.update_channel_themes(channel_id=channel.channel_id, themes=combined_themes)
+                return channel.channel_id
+
             result = self.database_client.create(
                 index_name=self.__INDEX_NAME,
                 document={
@@ -67,11 +90,11 @@ class ChannelService:
                     "offset_id": channel.offset_id,
                     "themes": channel.themes,
                 },
-                document_id=channel.channel_id,
+                document_id=channel.channel_id.lower(),  # force lowercase on channel id
             )
             return result
         except Exception as error:
-            raise (error)
+            raise error
 
     def toggle_channel_activeness(self, channel_id: str, is_active: bool) -> bool:
         """
