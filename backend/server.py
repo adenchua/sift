@@ -2,7 +2,11 @@ from fastapi import FastAPI, HTTPException
 from typing import List
 from pydantic import BaseModel
 
-from services.subscriber_service import Subscriber, SubscriberService, SubscriptionException
+from services.subscriber_service import (
+    Subscriber,
+    SubscriberService,
+    SubscriptionException,
+)
 
 app = FastAPI()
 
@@ -25,7 +29,10 @@ async def add_new_subscriber(subscriber: Subscriber):
         response = subscriber_client.add_subscriber(subscriber=subscriber)
         return {"message": f"New subscriber with id {response} created!"}
     except SubscriptionException:
-        raise HTTPException(status_code=409, detail=f"Subscriber with id <{subscriber_id}> already exists")
+        raise HTTPException(
+            status_code=409,
+            detail=f"Subscriber with id <{subscriber_id}> already exists",
+        )
 
 
 @app.patch("/subscriber/{subscriber_id}/themes", status_code=204)

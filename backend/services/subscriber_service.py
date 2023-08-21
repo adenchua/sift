@@ -73,11 +73,13 @@ class SubscriberService:
         if subscriber_exists:
             raise SubscriptionException(f"Subscriber with {subscriber_id} already exists")
 
-        self.database_client.create(
+        response = self.database_client.create(
             index_name=self.__INDEX_NAME,
             document={"is_subscribed": subscriber.is_subscribed, "subscribed_themes": subscribed_themes},
             document_id=subscriber_id,
         )
+
+        return response
 
     def toggle_subscription(self, subscriber_id: str, is_subscribed: bool):
         """changes a subscriber is_subscribed flag
