@@ -108,7 +108,9 @@ class ChannelService:
         """
         try:
             self.database_client.update(
-                index_name=self.__INDEX_NAME, document_id=channel_id, partial_doc={"is_active": is_active}
+                index_name=self.__INDEX_NAME,
+                document_id=channel_id,
+                partial_doc={"is_active": is_active},
             )
 
         except Exception as error:
@@ -124,7 +126,9 @@ class ChannelService:
         """
         try:
             self.database_client.update(
-                index_name=self.__INDEX_NAME, document_id=channel_id, partial_doc={"themes": themes}
+                index_name=self.__INDEX_NAME,
+                document_id=channel_id,
+                partial_doc={"themes": themes},
             )
 
         except Exception as error:

@@ -13,7 +13,7 @@ async def notify_subscribers():
     subscriber_service = SubscriberService()
     message_service = MessageService()
 
-    subscribers = subscriber_service.get_subscribers()
+    subscribers = subscriber_service.get_subscribers(True)
 
     for subscriber in subscribers:
         user_id = subscriber["id"]

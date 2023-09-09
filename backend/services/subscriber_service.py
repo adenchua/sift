@@ -31,11 +31,14 @@ class SubscriberService:
         Returns true if exists, false otherwise"""
         return self.database_client.document_exist(index_name=self.__INDEX_NAME, document_id=subscriber_id)
 
-    def get_subscribers(self):
+    def get_subscribers(self, is_subscribed=True):
+        """Gets all users in the database
+        Returns a list of users
+        """
         result = self.database_client.read(
             index_name=self.__INDEX_NAME,
             query={
-                "term": {"is_subscribed": True},
+                "term": {"is_subscribed": is_subscribed},
             },
         )
 
@@ -75,7 +78,10 @@ class SubscriberService:
 
         response = self.database_client.create(
             index_name=self.__INDEX_NAME,
-            document={"is_subscribed": subscriber.is_subscribed, "subscribed_themes": subscribed_themes},
+            document={
+                "is_subscribed": subscriber.is_subscribed,
+                "subscribed_themes": subscribed_themes,
+            },
             document_id=subscriber_id,
         )
 
@@ -91,7 +97,9 @@ class SubscriberService:
         is_subscribed - boolean flag to change to
         """
         self.database_client.update(
-            index_name=self.__INDEX_NAME, document_id=subscriber_id, partial_doc={"is_subscribed": is_subscribed}
+            index_name=self.__INDEX_NAME,
+            document_id=subscriber_id,
+            partial_doc={"is_subscribed": is_subscribed},
         )
 
     def update_subscriber_keywords(self, subscriber_id: str, theme: str, new_keywords: List[str]):

@@ -22,7 +22,21 @@ async def root():
     return {"message": "connection to sift server successful!"}
 
 
-@app.post("/subscriber", status_code=201)
+@app.get("/users")
+async def get_users():
+    subscriber_service = SubscriberService()
+    try:
+        non_subscribers = subscriber_service.get_subscribers(is_subscribed=False)
+        subscribers = subscriber_service.get_subscribers(is_subscribed=True)
+        return {"data": [*non_subscribers, *subscribers]}
+    except SubscriptionException:
+        raise HTTPException(
+            status_code=500,
+            detail="Something went wrong",
+        )
+
+
+@app.post("/subscribers", status_code=201)
 async def add_new_subscriber(subscriber: Subscriber):
     subscriber_service = SubscriberService()
     subscriber_id = subscriber.telegram_id
@@ -36,7 +50,7 @@ async def add_new_subscriber(subscriber: Subscriber):
         )
 
 
-@app.patch("/subscriber/{subscriber_id}/themes", status_code=204)
+@app.patch("/subscribers/{subscriber_id}/themes", status_code=204)
 async def update_subscriber_theme_keywords(subscriber_id: str, theme: SubscriberTheme):
     subscriber_service = SubscriberService()
 
@@ -45,7 +59,7 @@ async def update_subscriber_theme_keywords(subscriber_id: str, theme: Subscriber
     )
 
 
-@app.post("/subscriber/{subscriber_id}/unsubscribe", status_code=204)
+@app.post("/subscribers/{subscriber_id}/unsubscribe", status_code=204)
 async def unsubscribe(subscriber_id: str):
     subscriber_service = SubscriberService()
 
@@ -55,7 +69,7 @@ async def unsubscribe(subscriber_id: str):
     subscriber_service.toggle_subscription(subscriber_id=subscriber_id, is_subscribed=False)
 
 
-@app.post("/subscriber/{subscriber_id}/subscribe", status_code=204)
+@app.post("/subscribers/{subscriber_id}/subscribe", status_code=204)
 async def subscribe(subscriber_id: str):
     subscriber_service = SubscriberService()
 

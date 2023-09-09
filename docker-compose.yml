@@ -22,21 +22,31 @@ services:
     ports:
       - 9200:9200
     networks:
-      - opensearch-net
+      - app-network
+
   opensearch-dashboards:
     image: opensearchproject/opensearch-dashboards:latest
     container_name: opensearch-dashboards
     ports:
       - 5601:5601
-    expose:
-      - "5601"
     environment:
       OPENSEARCH_HOSTS: '["https://opensearch-node:9200"]'
     networks:
-      - opensearch-net
+      - app-network
+
+  fastapi-server:
+    container_name: fastapi-server
+    build: ./backend
+    ports: 
+      - 8080:80
+    networks:
+      - app-network
+    env_file:
+      - .env
+    restart: always
 
 volumes:
   opensearch-data:
 
 networks:
-  opensearch-net:
+  app-network:

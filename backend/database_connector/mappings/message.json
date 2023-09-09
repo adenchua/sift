@@ -29,6 +29,9 @@
       },
       "timestamp": {
         "type": "date"
+      },
+      "deletion_timestamp": {
+        "type": "date"
       }
     }
   },
