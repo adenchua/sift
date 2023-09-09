@@ -17,13 +17,17 @@ class SubscriberTheme(BaseModel):
     keywords: List[str]
 
 
+class ChannelTheme(BaseModel):
+    themes: List[str]
+
+
 @app.get("/")
 async def root():
     return {"message": "connection to sift server successful!"}
 
 
-@app.get("/users")
-async def get_users():
+@app.get("/subscribers")
+async def get_subscribers():
     subscriber_service = SubscriberService()
     try:
         non_subscribers = subscriber_service.get_subscribers(is_subscribed=False)
@@ -64,7 +68,7 @@ async def unsubscribe(subscriber_id: str):
     subscriber_service = SubscriberService()
 
     if not subscriber_service.check_subscriber_exists(subscriber_id):
-        raise HTTPException(status_code=404, detail=f"Subscriber record not found")
+        raise HTTPException(status_code=404, detail=f"Subscriber not found")
 
     subscriber_service.toggle_subscription(subscriber_id=subscriber_id, is_subscribed=False)
 
@@ -74,9 +78,22 @@ async def subscribe(subscriber_id: str):
     subscriber_service = SubscriberService()
 
     if not subscriber_service.check_subscriber_exists(subscriber_id):
-        raise HTTPException(status_code=404, detail=f"Subscriber record not found")
+        raise HTTPException(status_code=404, detail=f"Subscriber not found")
 
     subscriber_service.toggle_subscription(subscriber_id=subscriber_id, is_subscribed=True)
+
+
+@app.get("/channels")
+async def get_channels():
+    channel_service = ChannelService()
+    try:
+        response = channel_service.get_channels()
+        return {"data": response}
+    except SubscriptionException:
+        raise HTTPException(
+            status_code=500,
+            detail="Something went wrong",
+        )
 
 
 @app.post("/channels", status_code=201)
@@ -92,3 +109,33 @@ async def add_channel(channel: Channel):
             status_code=409,
             detail=f"Channel with id <{channel_id}> already exists",
         )
+
+
+@app.post("/channels/{channel_id}/set-inactive", status_code=204)
+async def set_channel_inactive(channel_id: str):
+    channel_service = ChannelService()
+
+    if not channel_service.check_channel_exists(channel_id=channel_id):
+        raise HTTPException(status_code=404, detail=f"Channel not found")
+
+    channel_service.toggle_channel_activeness(channel_id=channel_id, is_active=False)
+
+
+@app.post("/channels/{channel_id}/set-active", status_code=204)
+async def set_channel_active(channel_id: str):
+    channel_service = ChannelService()
+
+    if not channel_service.check_channel_exists(channel_id=channel_id):
+        raise HTTPException(status_code=404, detail=f"Channel not found")
+
+    channel_service.toggle_channel_activeness(channel_id=channel_id, is_active=True)
+
+
+@app.patch("/channels/{channel_id}/themes", status_code=204)
+async def update_channel_themes(channel_id: str, themes: ChannelTheme):
+    channel_service = ChannelService()
+
+    if not channel_service.check_channel_exists(channel_id=channel_id):
+        raise HTTPException(status_code=404, detail=f"Channel not found")
+
+    channel_service.update_channel_themes(channel_id=channel_id, themes=themes.themes)
