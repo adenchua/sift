@@ -1,8 +1,12 @@
 # vscode
 .vscode
 
+# setup
+demo_setup.json
+
 # telegram api sessions
 *.session
+*.session-journal
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -31,6 +35,7 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+.DS_STORE
 
 # PyInstaller
 #  Usually these files are written by a python script from a template

@@ -1,4 +1,15 @@
 from datetime import datetime
+from typing import List
+
+
+def get_latest_iso_datetime(iso_datetime_list: List[str]):
+    latest_date = None
+    for date_str in iso_datetime_list:
+        date = datetime.fromisoformat(date_str)
+        if latest_date is None or date > latest_date:
+            latest_date = date
+
+    return latest_date.isoformat() + "Z" if latest_date else None
 
 
 def get_current_iso_datetime():

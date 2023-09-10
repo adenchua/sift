@@ -1,0 +1,36 @@
+{
+  "index_name": "subscriber_v1",
+  "mapping": {
+    "settings": {
+      "index": {
+        "number_of_shards": 1,
+        "number_of_replicas": 0
+      }
+    },
+    "mappings": {
+      "dynamic": "strict",
+      "properties": {
+        "is_subscribed": {
+          "type": "boolean"
+        },
+        "subscribed_themes": {
+          "type": "nested",
+          "properties": {
+            "theme": {
+              "type": "keyword"
+            },
+            "keywords": {
+              "type": "keyword"
+            },
+            "last_crawl_timestamp": {
+              "type": "date"
+            }
+          }
+        }
+      }
+    },
+    "aliases": {
+      "subscriber": {}
+    }
+  }
+}

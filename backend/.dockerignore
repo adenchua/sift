@@ -1,0 +1,6 @@
+anon.session
+/venv
+__pycache__
+start_venv.bat
+pyproject.toml
+.git
