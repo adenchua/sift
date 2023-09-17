@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from services.subscriber_service import (
     Subscriber,
     SubscriberService,
-    SubscriptionException,
+    SubscriberExistsException,
 )
 from services.channel_service import Channel, ChannelService
 
@@ -33,7 +33,7 @@ async def get_subscribers():
         non_subscribers = subscriber_service.get_subscribers(is_subscribed=False)
         subscribers = subscriber_service.get_subscribers(is_subscribed=True)
         return {"data": [*non_subscribers, *subscribers]}
-    except SubscriptionException:
+    except SubscriberExistsException:
         raise HTTPException(
             status_code=500,
             detail="Something went wrong",
@@ -47,7 +47,7 @@ async def add_new_subscriber(subscriber: Subscriber):
     try:
         response = subscriber_service.add_subscriber(subscriber=subscriber)
         return {"message": f"New subscriber with id {response} created!"}
-    except SubscriptionException:
+    except SubscriberExistsException:
         raise HTTPException(
             status_code=409,
             detail=f"Subscriber with id <{subscriber_id}> already exists",
@@ -89,7 +89,7 @@ async def get_channels():
     try:
         response = channel_service.get_channels()
         return {"data": response}
-    except SubscriptionException:
+    except SubscriberExistsException:
         raise HTTPException(
             status_code=500,
             detail="Something went wrong",
@@ -104,7 +104,7 @@ async def add_channel(channel: Channel):
     try:
         response = channel_service.add_channel(channel=channel)
         return {"message": f"New channel with id {response} created!"}
-    except SubscriptionException:
+    except SubscriberExistsException:
         raise HTTPException(
             status_code=409,
             detail=f"Channel with id <{channel_id}> already exists",

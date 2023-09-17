@@ -4,7 +4,7 @@ from typing import Optional, List
 from database_connector.database_client import DatabaseClient
 
 
-class SubscriptionException(Exception):
+class SubscriberExistsException(Exception):
     pass
 
 
@@ -15,6 +15,7 @@ class SubscribedTheme(BaseModel):
 
 
 class Subscriber(BaseModel):
+    id: str
     telegram_id: str
     is_subscribed: Optional[bool] = True
     subscribed_themes: list[SubscribedTheme] = []
@@ -70,17 +71,20 @@ class SubscriberService:
         SubscriptionException - if there is a existing subscriber with the subscriber id
         """
         subscribed_themes = [subscribed_theme.model_dump() for subscribed_theme in subscriber.subscribed_themes]
-        subscriber_id = subscriber.telegram_id.lower()  # telegram id is case-insensitive, however database storage is
+        subscriber_id = subscriber.id.lower()  # telegram id is case-insensitive, however database storage is
+
+        telegram_id = subscriber.telegram_id
 
         subscriber_exists = self.check_subscriber_exists(subscriber_id)
         if subscriber_exists:
-            raise SubscriptionException(f"Subscriber with {subscriber_id} already exists")
+            raise SubscriberExistsException(f"Subscriber with {subscriber_id} already exists")
 
         response = self.database_client.create(
             index_name=self.__INDEX_NAME,
             document={
                 "is_subscribed": subscriber.is_subscribed,
                 "subscribed_themes": subscribed_themes,
+                "telegram_user_id": telegram_id,
             },
             document_id=subscriber_id,
         )

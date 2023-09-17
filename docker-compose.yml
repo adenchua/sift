@@ -9,7 +9,7 @@ services:
       - discovery.seed_hosts=opensearch-node
       - cluster.initial_cluster_manager_nodes=opensearch-node
       - bootstrap.memory_lock=true
-      - "OPENSEARCH_JAVA_OPTS=-Xms8g -Xmx8g"
+      - "OPENSEARCH_JAVA_OPTS=-Xms4g -Xmx4g"
     ulimits:
       memlock:
         soft: -1
