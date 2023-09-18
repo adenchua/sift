@@ -26,6 +26,9 @@
               "type": "date"
             }
           }
+        },
+        "telegram_user_id": {
+          "type": "keyword"
         }
       }
     },
