@@ -1,4 +1,4 @@
-from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardRemove, ReplyKeyboardMarkup
+from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardRemove
 from telegram.ext import (
     Application,
     CommandHandler,
@@ -10,18 +10,33 @@ from telegram.ext import (
 )
 import os
 import dotenv
+import logging
 
 from services.subscriber_service import (
     SubscriberService,
     Subscriber,
 )
+from utils.string_helper import clean_string
+
 
 dotenv.load_dotenv()
 telegram_bot_token = os.getenv("ENV_TG_BOT_TOKEN") or ""
 
-THEME, KEYWORDS = range(2)
+# Enable logging
+logging.basicConfig(
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
+)
+# set higher logging level for httpx to avoid all GET and POST requests being logged
+logging.getLogger("httpx").setLevel(logging.WARNING)
 
-FOOD, NEWS, SHOPPING = range(3)
+logger = logging.getLogger(__name__)
+
+THEME_STATE, KEYWORDS_STATE = range(2)
+
+# category of themes
+FOOD = 'food'
+NEWS = 'news'
+SHOPPING = 'shopping'
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -100,45 +115,58 @@ async def subscribe_command(update: Update, context: ContextTypes.DEFAULT_TYPE) 
 
 
 async def set_keywords_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    reply_keyboard = [["Food", "News", "Shopping"]]
+    keyboard = [
+        [
+            InlineKeyboardButton("🍔 Food", callback_data=FOOD),
+            InlineKeyboardButton("🗞️ News", callback_data=NEWS),
+            InlineKeyboardButton("🛍️ Shopping", callback_data=SHOPPING),
+        ]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
 
-    await update.message.reply_text(
-        f"Please choose a theme to update: ",
-        reply_markup=ReplyKeyboardMarkup(
-            reply_keyboard, one_time_keyboard=True, input_field_placeholder="Select theme to update keywords"
-        ),
-    )
-    return THEME
+    await update.message.reply_text(f"Please select a theme to update keywords: ", reply_markup=reply_markup)
+    return THEME_STATE
 
 
 async def handle_select_theme(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    theme = update.message.text
-    await update.message.reply_text(
-        f'You have selected "{theme}". Please provide comma-separated keywords to start monitoring.'
-    )
+    query = update.callback_query
+    theme = str(query.data)
     context.user_data["selected_theme"] = theme
-    return KEYWORDS
+    await query.answer()
+    await query.edit_message_text(
+        f'Theme "{theme}" selected. Please provide comma-separated keywords to start monitoring. Type /cancel to end this conversation.'
+    )
+    return KEYWORDS_STATE
 
 
 async def handle_update_theme_keywords(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    selected_theme = context.user_data.get("selected_theme", None)
+    subscriber_service = SubscriberService()
 
-    await update.message.reply_text("Thank you! I hope we can talk again some day.")
+    selected_theme = context.user_data.get("selected_theme", None)
+    user = update.message.from_user
+    subscriber_id = user['username']
+    keywords = update.message.text
+
+    try:
+        keywords = clean_string(keywords)
+        keywords = list(filter(None, keywords.split(',')))
+        subscriber_service.update_subscriber_keywords(subscriber_id=subscriber_id, theme=selected_theme, new_keywords=keywords)
+        await update.message.reply_text(f"Keywords for theme \"{selected_theme}\" updated - {str(keywords)}")
+    except:
+        await update.message.reply_text("Something went wrong, please try again later")
 
     return ConversationHandler.END
 
 
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Cancels and ends the conversation."""
-    user = update.message.from_user
-    await update.message.reply_text("If you change your mind, just let me know!", reply_markup=ReplyKeyboardRemove())
+    await update.message.reply_text("Operation cancelled", reply_markup=ReplyKeyboardRemove())
 
     return ConversationHandler.END
 
 
 def main() -> None:
     """Start the bot."""
-    print("initializing bot...")
     application = Application.builder().token(telegram_bot_token).build()
 
     # handle different commands
@@ -147,8 +175,12 @@ def main() -> None:
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler("setkeywords", set_keywords_command)],
         states={
-            THEME: [MessageHandler(filters.Regex("^(Food|News|Shopping)$"), handle_select_theme)],
-            KEYWORDS: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_update_theme_keywords)],
+            THEME_STATE: [
+                CallbackQueryHandler(handle_select_theme, pattern="^" + str(FOOD) + "$"),
+                CallbackQueryHandler(handle_select_theme, pattern="^" + str(NEWS) + "$"),
+                CallbackQueryHandler(handle_select_theme, pattern="^" + str(SHOPPING) + "$"),
+            ],
+            KEYWORDS_STATE: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_update_theme_keywords)],
         },
         fallbacks=[CommandHandler("cancel", cancel)],
     )
@@ -157,7 +189,6 @@ def main() -> None:
     application.add_handler(CommandHandler("subscribe", subscribe_command))
     application.add_handler(CommandHandler("unsubscribe", unsubscribe_command))
 
-    print("telegram bot listening...")
     # Run the bot until the user presses Ctrl-C
     application.run_polling(allowed_updates=Update.ALL_TYPES)
 
