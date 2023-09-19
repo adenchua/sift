@@ -26,7 +26,7 @@ services:
     restart: always
     
   opensearch-dashboards:
-    image: opensearchproject/opensearch-dashboards:latest
+    image: opensearchproject/opensearch-dashboards:2.8.0
     container_name: opensearch-dashboards
     ports:
       - 5601:5601
@@ -44,6 +44,8 @@ services:
       - app-network
     env_file:
       - .env
+    environment:
+      ENV_OS_HOST: "opensearch-node"
     restart: always
 
 volumes:
