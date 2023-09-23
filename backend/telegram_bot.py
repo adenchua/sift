@@ -153,7 +153,8 @@ async def handle_update_theme_keywords(update: Update, context: ContextTypes.DEF
     try:
         keywords = clean_string(keywords)
         keywords = list(filter(None, keywords.split(",")))  # split into an array, remove empty keywords
-        keywords = list(filter(str.strip, keywords))  # remove leading and post whitespaces
+        keywords = [keyword.strip() for keyword in keywords]  # remove trailing whitespaces
+        keywords = list(filter(None, keywords))  # remove empty strings in list
         subscriber_service.update_subscriber_keywords(
             subscriber_id=telegram_id, theme=selected_theme, new_keywords=keywords
         )
