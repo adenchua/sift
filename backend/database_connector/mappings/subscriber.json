@@ -27,7 +27,7 @@
             }
           }
         },
-        "telegram_user_id": {
+        "telegram_username": {
           "type": "keyword"
         }
       }

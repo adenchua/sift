@@ -17,7 +17,7 @@ class TelegramClient:
     async def get_telegram_channel_messages(self, channel_id: str, offset_id: int = -1):
         channel = await self.client.get_entity(channel_id)
 
-        if offset_id == -1:
+        if offset_id == -1 or offset_id is None:
             # sending back only latest 100 messages for new channels.
             # Do not want to slow down the api call
             return await self.client.get_messages(
