@@ -1,18 +1,23 @@
 import os
 from typing import List, Optional
 
-from opensearchpy import OpenSearch
 import dotenv
+from opensearchpy import OpenSearch
+from pydantic import BaseModel
 
+from database_connector.database_exception import DatabaseException
 from services.logging_service import LoggingService
-from classes.database_exception import DatabaseException
-
 
 dotenv.load_dotenv()
 env_host = os.getenv("ENV_OS_HOST") or ""
 env_port = os.getenv("ENV_OS_PORT") or 0
 env_username = os.getenv("ENV_OS_USERNAME") or ""
 env_password = os.getenv("ENV_OS_PASSWORD") or ""
+
+
+class DatabaseIndex(BaseModel):
+    index_name: str
+    mapping: dict
 
 
 class DatabaseClient:
@@ -130,31 +135,23 @@ class DatabaseClient:
         Returns:
         True if the update operation is successful, False if the document does not exist
         """
-        update_log_message = (
-            f"UPDATE | index <{index_name}>, document id <{document_id}>"
-        )
+        update_log_message = f"UPDATE | index <{index_name}>, document id <{document_id}>"
 
-        document_exists = self.document_exist(
-            index_name=index_name, document_id=document_id
-        )
+        document_exists = self.document_exist(index_name=index_name, document_id=document_id)
 
         if not document_exists:
             return False  # document does not exist, unable to perform update operation
 
         try:
             if partial_doc is not None:
-                self.client.update(
-                    index=index_name, id=document_id, body={"doc": partial_doc}
-                )
+                self.client.update(index=index_name, id=document_id, body={"doc": partial_doc})
 
                 self.logging_service.log_info(message=update_log_message)
 
                 return
 
             if script_doc is not None:
-                self.client.update(
-                    index=index_name, id=document_id, body={"script": script_doc}
-                )
+                self.client.update(index=index_name, id=document_id, body={"script": script_doc})
 
                 self.logging_service.log_info(message=update_log_message)
 
@@ -163,9 +160,7 @@ class DatabaseClient:
             self.logging_service.log_error(error_message=error)
             raise DatabaseException("Failed to update document in index")
 
-    def create(
-        self, index_name: str, document: dict, document_id: Optional[str] = None
-    ):
+    def create(self, index_name: str, document: dict, document_id: Optional[str] = None):
         """Creates a new document in an index in the database
 
 
@@ -194,30 +189,29 @@ class DatabaseClient:
 
                 new_document_id = response["_id"]
 
-                self.logging_service.log_info(
-                    message=f"CREATE | index <{index_name}>, document id <{new_document_id}>"
-                )
+                self.logging_service.log_info(message=f"CREATE | index <{index_name}>, document id <{new_document_id}>")
 
                 return new_document_id
 
             # document_id is given, need to check if document with the document_id already exists
             # if it exists, do not create the document
-            document_exists = self.document_exist(
-                index_name=index_name, document_id=document_id
-            )
+            document_exists = self.document_exist(index_name=index_name, document_id=document_id)
             if document_exists:
                 return None
 
-            self.client.create(
-                index=index_name, body=document, refresh=True, id=document_id
-            )
+            self.client.create(index=index_name, body=document, refresh=True, id=document_id)
 
-            self.logging_service.log_info(
-                message=f"CREATE | index <{index_name}>, document id <{document_id}>"
-            )
+            self.logging_service.log_info(message=f"CREATE | index <{index_name}>, document id <{document_id}>")
 
             return document_id
 
         except Exception as error:
             self.logging_service.log_error(error_message=error)
             raise DatabaseException("Failed to create document in index")
+
+    def add_database_index(self, new_index: DatabaseIndex):
+        """adds a new index to the database"""
+        index_name = new_index["index_name"]
+        index_body = new_index["mapping"]
+        self.client.indices.create(index=index_name, body=index_body)
+        self.logging_service.log_info(f"CREATE | index <{index_name}")

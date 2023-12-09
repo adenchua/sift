@@ -7,7 +7,8 @@ COPY ./requirements.txt /app/requirements.txt
 
 RUN pip install --no-cache-dir --upgrade -r /app/requirements.txt
 
-COPY . /app/api-server
-ENV PYTHONPATH "${PYTHONPATH}:/app/api-server"
+COPY . /app
+ENV PYTHONPATH "${PYTHONPATH}:/app"
 
-CMD ["uvicorn", "api-server.server:app", "--host", "0.0.0.0", "--port", "80"]
+RUN ls
+CMD ["python", "telegram_bot/main.py"]
