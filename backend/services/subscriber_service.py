@@ -1,10 +1,11 @@
 from pydantic import BaseModel
 from typing import Optional, List
+from typing import Union
 
 from database_connector.database_client import DatabaseClient
 
 
-class SubscriptionException(Exception):
+class SubscriberExistsException(Exception):
     pass
 
 
@@ -16,6 +17,7 @@ class SubscribedTheme(BaseModel):
 
 class Subscriber(BaseModel):
     telegram_id: str
+    telegram_username: Optional[str] = None
     is_subscribed: Optional[bool] = True
     subscribed_themes: list[SubscribedTheme] = []
 
@@ -26,10 +28,10 @@ class SubscriberService:
     def __init__(self):
         self.database_client = DatabaseClient()
 
-    def check_subscriber_exists(self, subscriber_id: str):
-        """Checks if a subscriber exist with a subscriber_id.
+    def check_subscriber_exists(self, id: Union[str, int]):
+        """Checks if a subscriber exist with a id.
         Returns true if exists, false otherwise"""
-        return self.database_client.document_exist(index_name=self.__INDEX_NAME, document_id=subscriber_id)
+        return self.database_client.document_exist(index_name=self.__INDEX_NAME, document_id=str(id))
 
     def get_subscribers(self, is_subscribed=True):
         """Gets all users in the database
@@ -44,10 +46,10 @@ class SubscriberService:
 
         return result
 
-    def update_subscriber_theme_timestamp(self, subscriber_id: str, theme: str, iso_timestamp: str):
+    def update_subscriber_theme_timestamp(self, subscriber_id: Union[str, int], theme: str, iso_timestamp: str):
         self.database_client.update(
             index_name=self.__INDEX_NAME,
-            document_id=subscriber_id,
+            document_id=str(subscriber_id),
             script_doc={
                 "lang": "painless",
                 "source": """for(int i=0;i<ctx._source.subscribed_themes.length;i++){
@@ -70,24 +72,25 @@ class SubscriberService:
         SubscriptionException - if there is a existing subscriber with the subscriber id
         """
         subscribed_themes = [subscribed_theme.model_dump() for subscribed_theme in subscriber.subscribed_themes]
-        subscriber_id = subscriber.telegram_id.lower()  # telegram id is case-insensitive, however database storage is
+        telegram_id = subscriber.telegram_id
 
-        subscriber_exists = self.check_subscriber_exists(subscriber_id)
+        subscriber_exists = self.check_subscriber_exists(telegram_id)
         if subscriber_exists:
-            raise SubscriptionException(f"Subscriber with {subscriber_id} already exists")
+            raise SubscriberExistsException(f"Subscriber with {telegram_id} already exists")
 
         response = self.database_client.create(
             index_name=self.__INDEX_NAME,
             document={
                 "is_subscribed": subscriber.is_subscribed,
                 "subscribed_themes": subscribed_themes,
+                "telegram_username": subscriber.telegram_username,
             },
-            document_id=subscriber_id,
+            document_id=telegram_id,
         )
 
         return response
 
-    def toggle_subscription(self, subscriber_id: str, is_subscribed: bool):
+    def toggle_subscription(self, subscriber_id: Union[str, int], is_subscribed: bool):
         """changes a subscriber is_subscribed flag
 
 
@@ -98,11 +101,11 @@ class SubscriberService:
         """
         self.database_client.update(
             index_name=self.__INDEX_NAME,
-            document_id=subscriber_id,
+            document_id=str(subscriber_id),
             partial_doc={"is_subscribed": is_subscribed},
         )
 
-    def update_subscriber_keywords(self, subscriber_id: str, theme: str, new_keywords: List[str]):
+    def update_subscriber_keywords(self, subscriber_id: Union[str, int], theme: str, new_keywords: List[str]):
         """
         Updates the keywords of a subscriber's theme.
 
@@ -110,7 +113,7 @@ class SubscriberService:
         """
         self.database_client.update(
             index_name=self.__INDEX_NAME,
-            document_id=subscriber_id,
+            document_id=str(subscriber_id),
             script_doc={
                 "lang": "painless",
                 "source": """

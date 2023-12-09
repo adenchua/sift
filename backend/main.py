@@ -1,12 +1,18 @@
 import argparse
 import asyncio
 
-from services.telegram_client import telegram_client
 from services.subscriber_service import SubscriberService
 from services.channel_service import ChannelService
 from services.message_service import MessageService
 from utils.message_helper import extract_and_ingest_messages
 from utils.date_helper import get_latest_iso_datetime
+from services.telegram_bot_client import TelegramBotClient
+
+
+async def send_message_from_bot(message: str, receiver_chat_id: str):
+    """send messages from bot. A user must first interact with this bot first"""
+    telegram_bot_client = TelegramBotClient()
+    await telegram_bot_client.send_message(message, receiver_chat_id)
 
 
 async def notify_subscribers():
@@ -16,7 +22,7 @@ async def notify_subscribers():
     subscribers = subscriber_service.get_subscribers(True)
 
     for subscriber in subscribers:
-        user_id = subscriber["id"]
+        subscriber_id = subscriber["id"]
         subscribed_themes = subscriber["subscribed_themes"]
 
         # for each subscribed theme, retrieve messages based on keywords and last crawl timestamp
@@ -28,12 +34,13 @@ async def notify_subscribers():
             timestamp = subscribed_theme["last_crawl_timestamp"]
             message_iso_dates = []  # datetime for comparison later
 
-            messages = message_service.get_messages(keywords_list=keywords, theme=theme, iso_date=timestamp)
+            messages = message_service.get_messages(
+                keywords_list=keywords, theme=theme, iso_date=timestamp
+            )
 
             for message in messages:
                 message_iso_dates.append(message["timestamp"])
-
-                await telegram_client.send_message(message=message["text"], target_id=user_id)
+                await send_message_from_bot(message["text"], subscriber_id)
 
             latest_message_iso_datetime = get_latest_iso_datetime(message_iso_dates)
 
@@ -41,7 +48,7 @@ async def notify_subscribers():
             # subsequent retrievals will be after this date for this theme
             if latest_message_iso_datetime is not None:
                 subscriber_service.update_subscriber_theme_timestamp(
-                    subscriber_id=user_id,
+                    subscriber_id=subscriber_id,
                     theme=theme,
                     iso_timestamp=latest_message_iso_datetime,
                 )
