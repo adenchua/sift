@@ -1,0 +1,128 @@
+[
+  {
+    "document": {
+      "themes": ["food"],
+      "is_active": true,
+      "offset_id": null,
+      "name": "SG Cheapo"
+    },
+    "id": "food_sgcheapo"
+  },
+  {
+    "document": { "themes": ["food"], "is_active": true, "offset_id": null, "name": "SG Food Lobang" },
+    "id": "sgfoodlobang"
+  },
+  {
+    "document": { "themes": ["news"], "is_active": false, "offset_id": null, "name": "SG Talk" },
+    "id": "sgtalk"
+  },
+  {
+    "document": { "themes": ["news"], "is_active": true, "offset_id": null, "name": "Lee Hsien Loong" },
+    "id": "leehsienloong"
+  },
+  {
+    "document": { "name": "Budget Babes", "is_active": true, "offset_id": null, "themes": ["shopping"] },
+    "id": "budgetbabes"
+  },
+  {
+    "document": { "name": "HWZ SG Deals", "is_active": true, "offset_id": null, "themes": ["tech"] },
+    "id": "hwzdeals"
+  },
+  {
+    "document": { "themes": ["food"], "is_active": true, "offset_id": null, "name": "Good Lobang" },
+    "id": "goodlobang"
+  },
+  {
+    "document": { "name": "News Outpost", "is_active": true, "offset_id": null, "themes": ["news"] },
+    "id": "newsoutpost"
+  },
+  {
+    "document": { "name": "All about web bci", "is_active": true, "offset_id": null, "themes": ["tech"] },
+    "id": "alwebbci"
+  },
+  {
+    "document": { "themes": ["news"], "is_active": true, "offset_id": null, "name": "Bloomberg" },
+    "id": "bloomberg"
+  },
+  {
+    "document": { "name": "Gov SG", "is_active": true, "offset_id": null, "themes": ["news"] },
+    "id": "govsg"
+  },
+  {
+    "document": { "name": "Daniel Food Diary", "is_active": true, "offset_id": null, "themes": ["food"] },
+    "id": "danielfooddiary"
+  },
+  {
+    "document": { "name": "Geek Share", "is_active": true, "offset_id": null, "themes": ["tech"] },
+    "id": "geekshare"
+  },
+  {
+    "document": { "name": "SG Tech & Games", "is_active": true, "offset_id": null, "themes": ["shopping", "tech"] },
+    "id": "techngames"
+  },
+  {
+    "document": { "name": "SG Adulting 101", "is_active": true, "offset_id": null, "themes": ["shopping", "food"] },
+    "id": "sgadulting101"
+  },
+  {
+    "document": { "themes": ["food"], "is_active": true, "offset_id": null, "name": "Kiasu Foodies" },
+    "id": "kiasufoodies"
+  },
+  {
+    "document": { "themes": ["food"], "is_active": true, "offset_id": null, "name": "EatBook SG" },
+    "id": "eatbooksg"
+  },
+  {
+    "document": { "themes": ["news"], "is_active": true, "offset_id": null, "name": "CNA" },
+    "id": "cnalatest"
+  },
+  {
+    "document": {
+      "name": "Singapore Atrium Sale",
+      "is_active": true,
+      "offset_id": null,
+      "themes": ["shopping", "food"]
+    },
+    "id": "singaporeatriumsale"
+  },
+  {
+    "document": { "themes": ["news"], "is_active": true, "offset_id": null, "name": "The Straits Times" },
+    "id": "thestraitstimes"
+  },
+  {
+    "document": { "themes": ["news"], "is_active": true, "offset_id": null, "name": "Rice Media" },
+    "id": "ricemedia"
+  },
+  {
+    "document": { "themes": ["news"], "is_active": true, "offset_id": null, "name": "Zao Bao Singapore" },
+    "id": "zaobaosg"
+  },
+  {
+    "document": { "themes": ["food"], "is_active": true, "offset_id": null, "name": "sg foodies" },
+    "id": "sgfoodies"
+  },
+  {
+    "document": { "themes": ["food"], "is_active": true, "offset_id": null, "name": "SG Food Deals" },
+    "id": "sgfooddeals"
+  },
+  {
+    "document": { "name": "Zula SG", "is_active": true, "offset_id": null, "themes": ["shopping"] },
+    "id": "zulasg"
+  },
+  {
+    "document": { "name": "hardwarezone SG", "is_active": true, "offset_id": null, "themes": ["tech"] },
+    "id": "hardwarezonesg"
+  },
+  {
+    "document": { "themes": ["news"], "is_active": true, "offset_id": null, "name": "Must Share News" },
+    "id": "mustsharenews"
+  },
+  {
+    "document": { "name": "Great Deals SG", "is_active": true, "offset_id": null, "themes": ["shopping"] },
+    "id": "greatdealssg"
+  },
+  {
+    "document": { "themes": ["news"], "is_active": true, "offset_id": null, "name": "Mothership Singapore" },
+    "id": "mothershipsg"
+  }
+]

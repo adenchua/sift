@@ -1,18 +1,23 @@
 import os
 from typing import List, Optional
 
-from opensearchpy import OpenSearch
 import dotenv
+from opensearchpy import OpenSearch
+from pydantic import BaseModel
 
-from services.logging_service import LoggingService
 from database_connector.database_exception import DatabaseException
-
+from services.logging_service import LoggingService
 
 dotenv.load_dotenv()
 env_host = os.getenv("ENV_OS_HOST") or ""
 env_port = os.getenv("ENV_OS_PORT") or 0
 env_username = os.getenv("ENV_OS_USERNAME") or ""
 env_password = os.getenv("ENV_OS_PASSWORD") or ""
+
+
+class DatabaseIndex(BaseModel):
+    index_name: str
+    mapping: dict
 
 
 class DatabaseClient:
@@ -203,3 +208,10 @@ class DatabaseClient:
         except Exception as error:
             self.logging_service.log_error(error_message=error)
             raise DatabaseException("Failed to create document in index")
+
+    def add_database_index(self, new_index: DatabaseIndex):
+        """adds a new index to the database"""
+        index_name = new_index["index_name"]
+        index_body = new_index["mapping"]
+        self.client.indices.create(index=index_name, body=index_body)
+        self.logging_service.log_info(f"CREATE | index <{index_name}")
