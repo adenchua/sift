@@ -1,3 +1,7 @@
+import sys
+
+sys.path.append("..")
+
 from fastapi import FastAPI, HTTPException
 from typing import List
 from pydantic import BaseModel

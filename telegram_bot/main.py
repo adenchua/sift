@@ -1,3 +1,7 @@
+import sys
+
+sys.path.append("..")
+
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardRemove
 from telegram.ext import (
     Application,
