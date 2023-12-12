@@ -9,4 +9,4 @@ RUN pip install --no-cache-dir --upgrade -r /app/requirements.txt
 COPY . /app
 ENV PYTHONPATH "${PYTHONPATH}:/app"
 
-CMD ["python", "telegram_bot/main.py"]
+CMD ["python", "-u", "main.py", "--start"]
