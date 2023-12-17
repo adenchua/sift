@@ -4,3 +4,7 @@ __pycache__
 start_venv.bat
 pyproject.toml
 .git
+/demo
+/docs
+LICENSE
+README.md

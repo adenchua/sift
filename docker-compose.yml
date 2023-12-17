@@ -9,7 +9,7 @@ services:
       - discovery.seed_hosts=opensearch-node
       - cluster.initial_cluster_manager_nodes=opensearch-node
       - bootstrap.memory_lock=true
-      - "OPENSEARCH_JAVA_OPTS=-Xms4g -Xmx4g"
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
     ulimits:
       memlock:
         soft: -1
@@ -23,7 +23,7 @@ services:
       - 9200:9200
     networks:
       - app-network
-    restart: always
+    restart: on-failure
 
   fastapi-server:
     container_name: fastapi-server
@@ -37,7 +37,8 @@ services:
       - .env
     environment:
       ENV_OS_HOST: "opensearch-node"
-    restart: always
+    depends_on:
+      - opensearch-node
 
   telegram-bot:
     container_name: telegram-bot
@@ -49,7 +50,23 @@ services:
       - .env
     environment:
       ENV_OS_HOST: "opensearch-node"
-    restart: always
+    depends_on:
+      - opensearch-node
+    restart: on-failure
+
+  background-service:
+    container_name: background-service
+    build:
+      dockerfile: ./Dockerfile.background-service
+    networks:
+      - app-network
+    env_file:
+      - .env
+    environment:
+      ENV_OS_HOST: "opensearch-node"
+    depends_on:
+      - opensearch-node
+    restart: on-failure
 
 volumes:
   opensearch-data:
