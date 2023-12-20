@@ -98,7 +98,7 @@
               "keywords": {
                 "type": "keyword"
               },
-              "last_crawl_timestamp": {
+              "last_notified_timestamp": {
                 "type": "date"
               }
             }

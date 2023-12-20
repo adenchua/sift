@@ -1,6 +1,6 @@
+from typing import List, Optional, Union
+
 from pydantic import BaseModel
-from typing import Optional, List
-from typing import Union
 
 from database_connector.database_client import DatabaseClient
 
@@ -12,7 +12,7 @@ class SubscriberExistsException(Exception):
 class SubscribedTheme(BaseModel):
     theme: str
     keywords: List[str]
-    last_crawl_timestamp: Optional[str] = None
+    last_notified_timestamp: Optional[str] = None
 
 
 class Subscriber(BaseModel):
@@ -28,15 +28,27 @@ class SubscriberService:
     def __init__(self):
         self.database_client = DatabaseClient()
 
+    def __toggle_subscription(self, subscriber_id: Union[str, int], is_subscribed: bool):
+        """changes a subscriber is_subscribed flag
+
+        Parameters:
+        subscriber_id - id of subscriber to update the is_subscribed status
+
+        is_subscribed - boolean flag to change to
+        """
+        self.database_client.update(
+            index_name=self.__INDEX_NAME,
+            document_id=str(subscriber_id),
+            partial_doc={"is_subscribed": is_subscribed},
+        )
+
     def check_subscriber_exists(self, id: Union[str, int]):
         """Checks if a subscriber exist with a id.
         Returns true if exists, false otherwise"""
         return self.database_client.document_exist(index_name=self.__INDEX_NAME, document_id=str(id))
 
-    def get_subscribers(self, is_subscribed=True):
-        """Gets all users in the database
-        Returns a list of users
-        """
+    def get_subscribers(self, is_subscribed: Optional[bool] = True):
+        """Returns a list of users filtered by is_subscribed status"""
         result = self.database_client.read(
             index_name=self.__INDEX_NAME,
             query={
@@ -45,22 +57,6 @@ class SubscriberService:
         )
 
         return result
-
-    def update_subscriber_theme_timestamp(self, subscriber_id: Union[str, int], theme: str, iso_timestamp: str):
-        self.database_client.update(
-            index_name=self.__INDEX_NAME,
-            document_id=str(subscriber_id),
-            script_doc={
-                "lang": "painless",
-                "source": """for(int i=0;i<ctx._source.subscribed_themes.length;i++){
-                if(ctx._source.subscribed_themes[i].theme == params.theme){ctx._source.subscribed_themes[i].last_crawl_timestamp = params.new_value;}
-                }""",
-                "params": {
-                    "theme": theme,
-                    "new_value": iso_timestamp,
-                },
-            },
-        )
 
     def add_subscriber(self, subscriber: Subscriber) -> str:
         """adds a subscriber with a telegram id to the database
@@ -90,26 +86,30 @@ class SubscriberService:
 
         return response
 
-    def toggle_subscription(self, subscriber_id: Union[str, int], is_subscribed: bool):
-        """changes a subscriber is_subscribed flag
-
-
-        Parameters:
-        subscriber_id - id of subscriber to update the is_subscribed status
-
-        is_subscribed - boolean flag to change to
+    def update_subscriber_theme_timestamp(self, subscriber_id: Union[str, int], theme: str, iso_timestamp: str):
+        """Updates a subscriber's theme last_notified_timestamp.
+        If the theme does not exist, this operation does nothing
         """
         self.database_client.update(
             index_name=self.__INDEX_NAME,
             document_id=str(subscriber_id),
-            partial_doc={"is_subscribed": is_subscribed},
+            script_doc={
+                "lang": "painless",
+                "source": """for(int i=0;i<ctx._source.subscribed_themes.length;i++){
+                if(ctx._source.subscribed_themes[i].theme == params.theme){ctx._source.subscribed_themes[i].last_notified_timestamp = params.new_value;}
+                }""",
+                "params": {
+                    "theme": theme,
+                    "new_value": iso_timestamp,
+                },
+            },
         )
 
-    def update_subscriber_keywords(self, subscriber_id: Union[str, int], theme: str, new_keywords: List[str]):
+    def update_subscriber_theme_keywords(self, subscriber_id: Union[str, int], theme: str, new_keywords: List[str]):
         """
         Updates the keywords of a subscriber's theme.
 
-        If the theme doesn't exist, it adds it to the subscribed themes list
+        If the theme doesn't exist, a new theme with the keywords is added to the theme list
         """
         self.database_client.update(
             index_name=self.__INDEX_NAME,
@@ -126,7 +126,7 @@ class SubscriberService:
                     }
                 }
                 if(newTheme){
-                    ctx._source.subscribed_themes.add(["theme": params.theme, "keywords": params.new_value, "last_crawl_timestamp": null]);
+                    ctx._source.subscribed_themes.add(["theme": params.theme, "keywords": params.new_value, "last_notified_timestamp": null]);
                 }
                 """,
                 "params": {
@@ -135,3 +135,28 @@ class SubscriberService:
                 },
             },
         )
+
+    def unsubscribe(self, subscriber_id: Union[str, int]):
+        """
+        unsubscribes the user from receiving notifications.
+
+        Sets the last_notified_timestamp of all themes to None.
+        This prevents the subscriber from getting spammed with large volume of messages upon re-subscribing
+        """
+        self.__toggle_subscription(subscriber_id=subscriber_id, is_subscribed=False)
+        self.database_client.update(
+            index_name=self.__INDEX_NAME,
+            document_id=str(subscriber_id),
+            script_doc={
+                "lang": "painless",
+                "source": """for(int i=0;i<ctx._source.subscribed_themes.length;i++){
+                ctx._source.subscribed_themes[i].last_notified_timestamp = null;
+                }""",
+            },
+        )
+
+    def subscribe(self, subscriber_id: Union[str, int]):
+        """
+        subscribes the user to receive notifications
+        """
+        self.__toggle_subscription(subscriber_id=subscriber_id, is_subscribed=True)

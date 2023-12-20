@@ -2,27 +2,24 @@ import sys
 
 sys.path.append("..")
 
-from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardRemove
+import logging
+import os
+
+import dotenv
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardRemove, Update
 from telegram.ext import (
     Application,
+    CallbackQueryHandler,
     CommandHandler,
     ContextTypes,
+    ConversationHandler,
     MessageHandler,
     filters,
-    CallbackQueryHandler,
-    ConversationHandler,
 )
-import os
-import dotenv
-import logging
 
-from services.subscriber_service import (
-    SubscriberService,
-    Subscriber,
-)
 from services.logging_service import LoggingService
-from utils.string_helper import clean_string
-
+from services.subscriber_service import Subscriber, SubscriberService
+from utils.string_helper import clean_string, get_newline_separated_strings
 
 dotenv.load_dotenv()
 telegram_bot_token = os.getenv("ENV_TG_BOT_TOKEN") or ""
@@ -84,7 +81,7 @@ async def unsubscribe_command(update: Update, context: ContextTypes.DEFAULT_TYPE
             await update.message.reply_text("Eh? I don't know you.")
             return
 
-        subscriber_service.toggle_subscription(subscriber_id=telegram_id, is_subscribed=False)
+        subscriber_service.unsubscribe(subscriber_id=telegram_id)
         await update.message.reply_text("Yes master. This is the last time you'll hear from me.")
     except Exception as err:
         error_logging_service.log_error(err)
@@ -106,7 +103,7 @@ async def subscribe_command(update: Update, context: ContextTypes.DEFAULT_TYPE) 
 
         # subscriber already exist, re-subscribes the person instead
         if subscriber_already_exists:
-            subscriber_service.toggle_subscription(subscriber_id=telegram_id, is_subscribed=True)
+            subscriber_service.subscribe(subscriber_id=telegram_id)
             await update.message.reply_text(
                 f"I have re-enabled your subscription! You'll hear from me soon, master {telegram_username}"
             )
@@ -159,10 +156,14 @@ async def handle_update_theme_keywords(update: Update, context: ContextTypes.DEF
         keywords = list(filter(None, keywords.split(",")))  # split into an array, remove empty keywords
         keywords = [keyword.strip() for keyword in keywords]  # remove trailing whitespaces
         keywords = list(filter(None, keywords))  # remove empty strings in list
-        subscriber_service.update_subscriber_keywords(
+        subscriber_service.update_subscriber_theme_keywords(
             subscriber_id=telegram_id, theme=selected_theme, new_keywords=keywords
         )
-        await update.message.reply_text(f'Keywords for theme "{selected_theme}" updated - {str(keywords)}')
+        newline_separated_keywords = get_newline_separated_strings(keywords)
+
+        await update.message.reply_text(
+            f'Keywords for theme "{selected_theme}" updated: \n{newline_separated_keywords}'
+        )
     except Exception as err:
         error_logging_service.log_error(err)
         await update.message.reply_text("Something went wrong, please try again later")

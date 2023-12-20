@@ -62,7 +62,7 @@ async def add_new_subscriber(subscriber: Subscriber):
 async def update_subscriber_theme_keywords(subscriber_id: str, theme: SubscriberTheme):
     subscriber_service = SubscriberService()
 
-    subscriber_service.update_subscriber_keywords(
+    subscriber_service.update_subscriber_theme_keywords(
         subscriber_id=subscriber_id, theme=theme.theme, new_keywords=theme.keywords
     )
 
@@ -74,7 +74,7 @@ async def unsubscribe(subscriber_id: str):
     if not subscriber_service.check_subscriber_exists(subscriber_id):
         raise HTTPException(status_code=404, detail=f"Subscriber not found")
 
-    subscriber_service.toggle_subscription(subscriber_id=subscriber_id, is_subscribed=False)
+    subscriber_service.unsubscribe(subscriber_id=subscriber_id)
 
 
 @app.post("/subscribers/{subscriber_id}/subscribe", status_code=204)
@@ -84,7 +84,7 @@ async def subscribe(subscriber_id: str):
     if not subscriber_service.check_subscriber_exists(subscriber_id):
         raise HTTPException(status_code=404, detail=f"Subscriber not found")
 
-    subscriber_service.toggle_subscription(subscriber_id=subscriber_id, is_subscribed=True)
+    subscriber_service.subscribe(subscriber_id=subscriber_id)
 
 
 @app.get("/channels")
