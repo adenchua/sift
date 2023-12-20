@@ -44,7 +44,7 @@ class ChannelService:
     def get_active_channels(self):
         """
         returns all active channels. Active channels refer to channels
-        that are being crawled by the system periodically
+        that are being retrieved by the system periodically
         """
         try:
             result = self.database_client.read(index_name=self.__INDEX_NAME, query={"term": {"is_active": True}})

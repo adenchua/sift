@@ -27,27 +27,12 @@ Create an `.env` file at the root level with reference from the provided `.env.t
 Simply run `docker-compose up --build -d` at the root folder. This sets up following:
 
 - `opensearch` database at port `9200`
-- `kibana` dashboard to visualise data and manage indices at port `5601`
 - `FastAPI` server running at port `8080`
+- background service that starts up a recurring download and notification script
+- telegram bot service for client app interaction
 
-Create database indices in `opensearch` using the mappings found in `/backend/database_connector/mappings`
-
-You may access all the available api at `http://0.0.0.0:8080/docs`
+Administrators may access all the available api to manage channels and subscribers at `http://0.0.0.0:8080/docs`
 
 ## System design
 
-![System architecture](/docs/sift-system-architecture.jpg)
-
-- The database client acts as an interface between the database and the services. It performs logging and data cleaning for read operations.
-- The notification service retrieves all active subscribers and performs a keyword search on telegram messages sent after a timestamp. Any matched messages will be sent to
-the subscriber.
-- The message crawl service retrieves all the channels from the database, downloads messages from telegram and ingest them to the database.
-
-## Future enhancements
-
-- A client facing frontend web page to manage subscribers and channels
-- A notification queue system to better manage notifications
-- A channel discovery feature to discover more channels and groups
-- Message crawling from Telegram groups
-- Better logging and analytic features for usage and monitoring
-- Deletion service to cleanup old messages
+You may refer to the initial system design considerations [here](docs/system-design.md)

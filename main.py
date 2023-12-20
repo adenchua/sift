@@ -2,17 +2,17 @@ import argparse
 import asyncio
 
 from services.channel_service import ChannelService
+from services.download_service import download_service
 from services.message_service import MessageService
+from services.notification_service import NotificationService
 from services.subscriber_service import SubscriberService
-from services.telegram_bot_client import TelegramBotClient
 from utils.date_helper import get_latest_iso_datetime
-from utils.message_helper import extract_and_ingest_messages
 
 
 async def send_message_from_bot(message: str, receiver_chat_id: str):
     """send messages from bot. A user must first interact with this bot first"""
-    telegram_bot_client = TelegramBotClient()
-    await telegram_bot_client.send_message(message, receiver_chat_id)
+    notification_service = NotificationService()
+    await notification_service.send_message(message, receiver_chat_id)
 
 
 async def notify_subscribers():
@@ -25,16 +25,18 @@ async def notify_subscribers():
         subscriber_id = subscriber["id"]
         subscribed_themes = subscriber["subscribed_themes"]
 
-        # for each subscribed theme, retrieve messages based on keywords and last crawl timestamp
+        # for each subscribed theme, retrieve messages based on keywords and last notified timestamp
         # messages found are considered matches, sent back to the subscriber via telegram
-        # last crawl timestamp is updated with the latest message timestamp
+        # last notified timestamp is updated with the latest message timestamp
         for subscribed_theme in subscribed_themes:
             theme = subscribed_theme["theme"]
             keywords = subscribed_theme["keywords"]
-            timestamp = subscribed_theme["last_crawl_timestamp"]
+            timestamp = subscribed_theme["last_notified_timestamp"]
             message_iso_dates = []  # datetime for comparison later
 
-            messages = message_service.get_messages(keywords_list=keywords, theme=theme, iso_date=timestamp)
+            messages = message_service.get_matched_messages(
+                keywords_list=keywords, theme=theme, iso_date_from=timestamp
+            )
 
             for message in messages:
                 message_iso_dates.append(message["timestamp"])
@@ -42,7 +44,7 @@ async def notify_subscribers():
 
             latest_message_iso_datetime = get_latest_iso_datetime(message_iso_dates)
 
-            # update subscriber last crawl timestamp to the latest message datetime
+            # update subscriber last notified timestamp to the latest message datetime
             # subsequent retrievals will be after this date for this theme
             if latest_message_iso_datetime is not None:
                 subscriber_service.update_subscriber_theme_timestamp(
@@ -57,19 +59,12 @@ async def download_telegram_messages():
 
     channels = channel_service.get_active_channels()
     for channel in channels:
-        channel_id = channel["id"]
-        offset_id = channel["offset_id"]
-        channel_themes = channel["themes"]
-        await extract_and_ingest_messages(
-            channel_id,
-            offset_id=-1 if offset_id is None else offset_id,
-            themes=channel_themes,
-        )
+        await download_service.download_messages_from_channel(channel=channel)
 
 
 async def start_background_download_service():
     """
-    runs the crawling of messages on a set interval
+    runs the download of messages on a set interval
     """
     while True:
         await download_telegram_messages()
