@@ -1,3 +1,4 @@
+import json
 import sys
 
 sys.path.append("..")
@@ -30,7 +31,7 @@ logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s
 logging.getLogger("httpx").setLevel(logging.WARNING)
 
 logger = logging.getLogger(__name__)
-error_logging_service = LoggingService()
+logging_service = LoggingService()
 
 THEME_STATE, KEYWORDS_STATE = range(2)
 
@@ -38,6 +39,9 @@ THEME_STATE, KEYWORDS_STATE = range(2)
 FOOD = "food"
 NEWS = "news"
 SHOPPING = "shopping"
+
+# for internal logging
+MODULE = "TELEGRAM-BOT"
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -51,6 +55,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user = update.message.from_user
     telegram_username = user["username"]
     telegram_id = str(user["id"])
+    user_dict = {"id": telegram_id, "username": telegram_username}
+    logging_service.log_info(message=f"Initiated conversation with the bot: {json.dumps(user_dict)}")
 
     new_subscriber = Subscriber(telegram_id=telegram_id, telegram_username=telegram_username)
     try:
@@ -59,7 +65,11 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         if not subscriber_already_exists:
             subscriber_service.add_subscriber(new_subscriber)
     except Exception as err:
-        error_logging_service.log_error(err)
+        error_dict = {"id": telegram_id, "username": telegram_username, "error": err}
+        logging_service.log_error(
+            message=f"Failed to start service: {json.dumps(error_dict)}",
+            module=MODULE,
+        )
         await update.message.reply_text("Sorry, something went wrong, please try again later")
         return
 
@@ -74,17 +84,31 @@ async def unsubscribe_command(update: Update, context: ContextTypes.DEFAULT_TYPE
 
     user = update.message.from_user
     telegram_id = str(user["id"])
+    telegram_username = user["username"]
+    user_dict = {
+        "id": telegram_id,
+        "username": telegram_username,
+    }
 
     try:
         subscriber_exist = subscriber_service.check_subscriber_exists(id=telegram_id)
         if not subscriber_exist:
-            await update.message.reply_text("Eh? I don't know you.")
+            logging_service.log_info(
+                message=f"Tried to unsubscribed from the bot, but does not exist in the database: {json.dumps(user_dict)}",
+                module=MODULE,
+            )
+            await update.message.reply_text("You are not subscribed in the first place.")
             return
 
         subscriber_service.unsubscribe(subscriber_id=telegram_id)
+        logging_service.log_info(message=f"Unsubscribed from the bot: {json.dumps(user_dict)}", module=MODULE)
         await update.message.reply_text("Yes master. This is the last time you'll hear from me.")
     except Exception as err:
-        error_logging_service.log_error(err)
+        error_dict = {"username": telegram_username, "id": telegram_id, "error": err}
+        logging_service.log_error(
+            message=f"Unsubscribe error: {json.dumps(error_dict)}",
+            module=MODULE,
+        )
         await update.message.reply_text(f"Something went wrong, please try again later")
 
 
@@ -95,6 +119,7 @@ async def subscribe_command(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     user = update.message.from_user
     telegram_username = user["username"]
     telegram_id = str(user["id"])
+    user_dict = {"username": telegram_username, "id": telegram_id}
 
     new_subscriber = Subscriber(telegram_id=telegram_id, telegram_username=telegram_username)
 
@@ -110,11 +135,16 @@ async def subscribe_command(update: Update, context: ContextTypes.DEFAULT_TYPE) 
             return
 
         subscriber_service.add_subscriber(subscriber=new_subscriber)
+        logging_service.log_info(message=f"Subscribed to the bot: {json.dumps(user_dict)}", module=MODULE)
         await update.message.reply_text(
-            f"Greetings master {telegram_username}. Thank you for subscribing to Sift! Let's set up some subscription themes shall we?"
+            f"Greetings master {telegram_username}. Thank you for subscribing to Sift! Let's set up some subscription themes with /setkeywords command"
         )
     except Exception as err:
-        error_logging_service.log_error(err)
+        error_dict = {**user_dict, "error": err}
+        logging_service.log_error(
+            message=f"Subscribe error: {json.dumps(error_dict)}",
+            module=MODULE,
+        )
         await update.message.reply_text(f"Something went wrong, please try again later")
 
 
@@ -165,7 +195,16 @@ async def handle_update_theme_keywords(update: Update, context: ContextTypes.DEF
             f'Keywords for theme "{selected_theme}" updated: \n{newline_separated_keywords}'
         )
     except Exception as err:
-        error_logging_service.log_error(err)
+        error_dict = {
+            "id": telegram_id,
+            "theme": selected_theme,
+            "keywords": update.message.text,
+            "error": err,
+        }
+        logging_service.log_error(
+            message=f"Update theme keywords failed: {json.dumps(error_dict)}",
+            module=MODULE,
+        )
         await update.message.reply_text("Something went wrong, please try again later")
 
     return ConversationHandler.END
