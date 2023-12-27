@@ -29,10 +29,12 @@ def setup_channels(db_client: DatabaseClient):
             )
 
 
-# first time setup for new machines
-# 1. loads the mapping for the indices
-# 2. add basic channels
 def main():
+    """
+    First time setup for new machines
+    1. loads the mapping for the indices
+    2. add basic channels
+    """
     db_client = DatabaseClient()
     setup_indices(db_client)
     setup_channels(db_client)
