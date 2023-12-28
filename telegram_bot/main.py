@@ -64,8 +64,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
         if not subscriber_already_exists:
             subscriber_service.add_subscriber(new_subscriber)
-    except Exception as err:
-        error_dict = {"id": telegram_id, "username": telegram_username, "error": err}
+    except Exception as error:
+        error_dict = {"id": telegram_id, "username": telegram_username, "error": str(error)}
         logging_service.log_error(
             message=f"Failed to start service: {json.dumps(error_dict)}",
             module=MODULE,
@@ -103,8 +103,8 @@ async def unsubscribe_command(update: Update, context: ContextTypes.DEFAULT_TYPE
         subscriber_service.unsubscribe(subscriber_id=telegram_id)
         logging_service.log_info(message=f"Unsubscribed from the bot: {json.dumps(user_dict)}", module=MODULE)
         await update.message.reply_text("Yes master. This is the last time you'll hear from me.")
-    except Exception as err:
-        error_dict = {"username": telegram_username, "id": telegram_id, "error": err}
+    except Exception as error:
+        error_dict = {"username": telegram_username, "id": telegram_id, "error": str(error)}
         logging_service.log_error(
             message=f"Unsubscribe error: {json.dumps(error_dict)}",
             module=MODULE,
@@ -139,8 +139,8 @@ async def subscribe_command(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         await update.message.reply_text(
             f"Greetings master {telegram_username}. Thank you for subscribing to Sift! Let's set up some subscription themes with /setkeywords command"
         )
-    except Exception as err:
-        error_dict = {**user_dict, "error": err}
+    except Exception as error:
+        error_dict = {**user_dict, "error": str(error)}
         logging_service.log_error(
             message=f"Subscribe error: {json.dumps(error_dict)}",
             module=MODULE,
@@ -194,12 +194,12 @@ async def handle_update_theme_keywords(update: Update, context: ContextTypes.DEF
         await update.message.reply_text(
             f'Keywords for theme "{selected_theme}" updated: \n{newline_separated_keywords}'
         )
-    except Exception as err:
+    except Exception as error:
         error_dict = {
             "id": telegram_id,
             "theme": selected_theme,
             "keywords": update.message.text,
-            "error": err,
+            "error": str(error),
         }
         logging_service.log_error(
             message=f"Update theme keywords failed: {json.dumps(error_dict)}",

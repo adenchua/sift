@@ -47,7 +47,7 @@ class DownloadService:
             # retrieve messages later than a given offset_id
             return await self.client.get_messages(channel, limit=None, offset_id=offset_id, reverse=True)
         except Exception as error:
-            error_content = {"channel_id": channel_id, "offset_id": offset_id, "error": error}
+            error_content = {"channel_id": channel_id, "offset_id": offset_id, "error": str(error)}
             self.logging_service.log_error(
                 message=f"Failed to fetch message from channel: {error_content}", module=LOGGING_MODULE
             )
