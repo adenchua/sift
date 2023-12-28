@@ -3,18 +3,22 @@ from typing import Optional
 
 import dotenv
 import telethon
-from services.channel_service import ChannelService, Channel
-from services.message_service import MessageService, Message
 from telethon.sessions import StringSession
+
+from services.channel_service import Channel, ChannelService
+from services.logging_service import LoggingService
+from services.message_service import Message, MessageService
 
 dotenv.load_dotenv()
 env_api_id = os.getenv("ENV_TG_API_ID") or ""
 env_api_hash = os.getenv("ENV_TG_API_HASH") or ""
 env_string_session = os.getenv("ENV_TG_STRING_SESSION") or ""
+LOGGING_MODULE = "DOWNLOAD-SERVICE"
 
 
 class DownloadService:
     def __init__(self, api_id=None, api_hash=None):
+        self.logging_service = LoggingService()
         self.api_id = api_id if api_id is not None else env_api_id
         self.api_hash = api_hash if api_hash is not None else env_api_hash
         # using string session to authenticate instead of anon, skip the login process
@@ -29,18 +33,24 @@ class DownloadService:
 
         Returns a list of messages
         """
-        MESSAGE_SIZE_FOR_NEW_CHANNELS = 100
-        channel = await self.client.get_entity(channel_id)
+        try:
+            MESSAGE_SIZE_FOR_NEW_CHANNELS = 100
+            channel = await self.client.get_entity(channel_id)
 
-        if offset_id is None:
-            # retrieving back latest 100 messages for new channels.
-            return await self.client.get_messages(
-                channel,
-                limit=MESSAGE_SIZE_FOR_NEW_CHANNELS,
+            if offset_id is None:
+                # retrieving back latest 100 messages for new channels.
+                return await self.client.get_messages(
+                    channel,
+                    limit=MESSAGE_SIZE_FOR_NEW_CHANNELS,
+                )
+
+            # retrieve messages later than a given offset_id
+            return await self.client.get_messages(channel, limit=None, offset_id=offset_id, reverse=True)
+        except Exception as error:
+            error_content = {"channel_id": channel_id, "offset_id": offset_id, "error": error}
+            self.logging_service.log_error(
+                message=f"Failed to fetch message from channel: {error_content}", module=LOGGING_MODULE
             )
-
-        # retrieve messages later than a given offset_id
-        return await self.client.get_messages(channel, limit=None, offset_id=offset_id, reverse=True)
 
     async def download_messages_from_channel(self, channel: Channel):
         """Downloads messages from a telegram channel and ingests to the database
