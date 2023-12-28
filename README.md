@@ -12,6 +12,7 @@ This is a personal project to solve a first-world problem; There are plenty of c
 | ------------- | ------------- |
 | FastAPI  | Api server to manage channels and subscribers |
 | OpenSearch  | Database which allow powerful search queries and tokenization features |
+| Telethon | Telegram wrapper library which allows `Python` to interact with Telegram's official APIs easily |
 
 The backend is written in `Python 3.9.6`
 
@@ -35,4 +36,4 @@ Administrators may access all the available api to manage channels and subscribe
 
 ## System design
 
-You may refer to the initial system design considerations [here](docs/system-design.md)
+You may refer to the initial system design considerations [here](docs/design-doc.md)

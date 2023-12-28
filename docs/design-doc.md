@@ -1,10 +1,24 @@
-# Sift System Design
+# Design Documentation
 
-Last updated: 17 December 2023
+Last updated: 28 December 2023
 
 The following section documents the design considerations for **Sift**.
 
-### Use Case & Assumptions
+## Sift System Design
+
+### Description
+
+Sift is a telegram notification system that sends you a message whenever certain telegram channels/groups mentions your keyword of interest.
+
+### Telegram channels message extraction
+
+Telegram channels are generally opened to public and maintained by channel administrators. Most channel administrators use bots to post messages at certain timing of the day. Usually, `1~2` posts will be sent out in the afternoon `10am/11am/12pm/1pm` and in the evening `6pm`. For channels maintained without use of bots, posting pattern is unpredictable and could reach `~10` messages a day
+
+### Themes
+
+Each telegram channel is assigned with 1 or more themes and it depends on the content of the channel. For example, a channel posting mostly food content will be assigned with `Food` theme. Subscribers may set keywords for a theme. If a message from channels with the same `Theme` matches, it will be sent to the subscriber as a notification
+
+### Use Case & Assumption
 
 - Users can only interact with the application through a telegram bot
 - Administrators can manage channels and users through a web interface
@@ -22,7 +36,7 @@ The following section documents the design considerations for **Sift**.
 
 ### Users & Traffic Estimates
 
-This is a small scale application designed for personal use.
+This is a small scale application designed for personal use. At max, `10 users` will subscribe to this application.
 
 ### Data Models
 
