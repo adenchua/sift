@@ -7,5 +7,6 @@ def clean_string(input_string: str) -> str:
     return re.sub("[^a-zA-Z0-9, ]", "", input_string).strip()
 
 
-def get_newline_separated_strings(string_list: List[str]) -> str:
-    return "\n".join(string_list)
+def format_bullet_point_newline_separated_string(string_list: List[str]) -> str:
+    bullet_point = "•"
+    return f"{bullet_point} " + f"\n{bullet_point} ".join(string_list)
