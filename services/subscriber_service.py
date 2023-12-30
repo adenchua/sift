@@ -58,6 +58,21 @@ class SubscriberService:
 
         return result
 
+    def get_subscriber_theme(self, subscriber_id: str, theme: str) -> Optional[SubscribedTheme]:
+        """
+        given a subscriber ID and theme, retrieve the subscribed theme object.
+        If a subscriber has previously set keywords for this theme, the SubscribedTheme object is returned.
+        """
+        response = self.database_client.read(index_name=self.__INDEX_NAME, query={"match": {"_id": subscriber_id}})
+        subscriber = response[0]
+        subscribed_themes = subscriber["subscribed_themes"]
+
+        for subscribed_theme in subscribed_themes:
+            if subscribed_theme["theme"] == theme.lower():
+                return subscribed_theme
+
+        return None
+
     def add_subscriber(self, subscriber: Subscriber) -> str:
         """adds a subscriber with a telegram id to the database
 

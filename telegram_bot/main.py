@@ -20,7 +20,7 @@ from telegram.ext import (
 
 from services.logging_service import LoggingService
 from services.subscriber_service import Subscriber, SubscriberService
-from utils.string_helper import clean_string, get_newline_separated_strings
+from utils.string_helper import clean_string, format_bullet_point_newline_separated_string
 
 dotenv.load_dotenv()
 telegram_bot_token = os.getenv("ENV_TG_BOT_TOKEN") or ""
@@ -163,14 +163,33 @@ async def set_keywords_command(update: Update, context: ContextTypes.DEFAULT_TYP
 
 
 async def handle_select_theme(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    query = update.callback_query
-    theme = str(query.data)
-    context.user_data["selected_theme"] = theme
-    await query.answer()
-    await query.edit_message_text(
-        f'Theme "{theme}" selected. Please provide comma-separated keywords to start monitoring. Type /cancel to end this conversation.'
-    )
-    return KEYWORDS_STATE
+    try:
+        subscriber_service = SubscriberService()
+        query = update.callback_query
+        theme = str(query.data)
+        telegram_user_id = str(query.from_user["id"])
+        context.user_data["selected_theme"] = theme
+        subscribed_theme = subscriber_service.get_subscriber_theme(
+            telegram_user_id, theme
+        )  # is None when no keywords are selected for that theme
+
+        main_prompt = f'Theme "{theme}" selected. Please provide comma-separated keywords to start monitoring. Type /cancel to end this conversation.'
+
+        # users have previously set keywords for that theme. Display the list to user
+        if subscribed_theme is not None:
+            subscribed_theme_keywords = subscribed_theme["keywords"]
+            previous_selections_display_text = ", ".join(subscribed_theme_keywords)
+            keywords_list_prompt = f"The current keywords set are: \n\n{previous_selections_display_text}"
+            main_prompt = (
+                f"{main_prompt}\n\n{keywords_list_prompt}"  # update main prompt to include previous selections
+            )
+
+        await query.edit_message_text(main_prompt)
+        return KEYWORDS_STATE
+
+    except Exception as error:
+        logging_service.log_error(f"Handle select theme error: {str(error)}", module=MODULE)
+        await update.callback_query.edit_message_text("Something went wrong, please try again later")
 
 
 async def handle_update_theme_keywords(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -189,10 +208,10 @@ async def handle_update_theme_keywords(update: Update, context: ContextTypes.DEF
         subscriber_service.update_subscriber_theme_keywords(
             subscriber_id=telegram_id, theme=selected_theme, new_keywords=keywords
         )
-        newline_separated_keywords = get_newline_separated_strings(keywords)
+        newline_separated_keywords = format_bullet_point_newline_separated_string(keywords)
 
         await update.message.reply_text(
-            f'Keywords for theme "{selected_theme}" updated: \n{newline_separated_keywords}'
+            f'Keywords for theme "{selected_theme}" updated: \n\n{newline_separated_keywords}'
         )
     except Exception as error:
         error_dict = {
