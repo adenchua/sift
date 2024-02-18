@@ -25,6 +25,16 @@ services:
       - app-network
     restart: on-failure
 
+  opensearch-dashboards:
+    image: opensearchproject/opensearch-dashboards:2.8.0 
+    container_name: opensearch-dashboards
+    ports:
+      - 5601:5601
+    environment:
+      OPENSEARCH_HOSTS: "https://opensearch-node:9200" 
+    networks:
+      - app-network
+
   fastapi-server:
     container_name: fastapi-server
     build: 
