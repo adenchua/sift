@@ -18,6 +18,10 @@ Telegram channels are generally opened to public and maintained by channel admin
 
 Each telegram channel is assigned with 1 or more themes and it depends on the content of the channel. For example, a channel posting mostly food content will be assigned with `Food` theme. Subscribers may set keywords for a theme. If a message from channels with the same `Theme` matches, it will be sent to the subscriber as a notification
 
+### Background service for message extraction and notification
+
+TODO
+
 ### Use Case & Assumption
 
 - Users can only interact with the application through a telegram bot
