@@ -30,7 +30,7 @@ class NotificationService:
         """
         try:
             formatted_message = self.__format_telegram_string(message)
-            await self.bot.send_message(chat_id=receiver_chat_id, text=formatted_message)
+            await self.bot.send_message(chat_id=receiver_chat_id, text=formatted_message, parse_mode="MarkdownV2")
         except Exception as error:
             self.logging_service.log_error(
                 message=f"Failed to send message through telegram bot: {error}", module="NOTIFICATION-SERVICE"
