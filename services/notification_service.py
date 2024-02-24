@@ -18,10 +18,10 @@ class NotificationService:
     def __format_telegram_string(self, string: str) -> str:
         """
         Telegram message formatting is different from telegram bot API message syntax
-        This function formats telegram format syntax to telegram bot api message syntax
+        This function formats telegram format syntax to telegram bot api message syntax, HTML
         """
-        string = string.replace("**", "*")  # bold word
-        string = string.replace("__", "_")  # italic
+        string = string.replace("**", "<b>")  # bold word
+        string = string.replace("__", "<i>")  # italic
         return string
 
     async def send_message(self, message: str, receiver_chat_id: str):
@@ -30,7 +30,7 @@ class NotificationService:
         """
         try:
             formatted_message = self.__format_telegram_string(message)
-            await self.bot.send_message(chat_id=receiver_chat_id, text=formatted_message, parse_mode="MarkdownV2")
+            await self.bot.send_message(chat_id=receiver_chat_id, text=formatted_message, parse_mode="HTML")
         except Exception as error:
             self.logging_service.log_error(
                 message=f"Failed to send message through telegram bot: {error}", module="NOTIFICATION-SERVICE"
